@@ -1,0 +1,22 @@
+# 行商人絶対殺すスクリプト
+
+
+on damage of wandering trader or Trader Llama:
+	# 条件チェック。「プレイヤーの攻撃であること」「Shiftキーを押していること」
+	the attacker is player
+	the attacker is sneaking
+	# 条件チェック。「飼い慣らされていないこと」
+	if the tamer of the victim is a player:
+		stop
+	# 実処理
+	play sound "entity.firework_rocket.shoot" to attacker
+	#message "%%" to attacker
+	cancel the event
+	play sound "entity.firework_rocket.launch" to attacker
+	push the attacked up at speed 2
+	loop 15 times:
+		play 10 glow 1 block over the victim
+		wait a tick
+	delete the victim
+
+

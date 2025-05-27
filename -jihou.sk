@@ -1,0 +1,12 @@
+
+
+at 18:33 in "world":
+	loop all players:
+		set {_flag} to true
+		if the altitude of the loop-player is lower than 60:
+			set {_flag} to false
+		if the world of the loop-player isn't "world":
+			set {_flag} to false
+		if {_flag} is true:
+			play sound "time.lilium" with volume 2 to the loop-player
+

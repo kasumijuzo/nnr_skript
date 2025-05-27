@@ -1,0 +1,205 @@
+#
+#
+# 2024/02/07 /horse-specコマンド時の書式を更新
+# 2024/02/15 ジャンプ力の計算方法を修正、文字の色を追加
+# 2024/02/21 「所有者」を「飼いならした人」に表現を変更、新しく現所有者として「所有者」を追加
+#
+
+
+on sign change:				#看板を編集した直後に…
+
+    #プレイヤーが何にも乗っていないときは終了
+    if player is not riding:
+        stop
+
+    #乗っているウマを取得
+    set {_horse} to player's vehicle
+
+    set {_name} to name of {_horse} #ウマの名前
+    if "%{_name}%" is "<none>": # 名前がないときは、エンティティの種類を表示
+        set {_name} to {_horse}
+
+    set {_owner} to display name of owner of {_horse} #ウマを飼いならした人
+    set {_ownerid} to owner of {_horse} #ウマを飼いならした人のID
+    if "%{_owner}%" is "<none>":
+        set {_owner} to {_ownerid}
+    set {_nowner} to display name of {new_owner::%{_horse}%} #ウマの所有者
+    set {_nownerid} to {new_owner::%{_horse}%} #ウマの所有者のID
+    if "%{_nowner}%" is "<none>":
+        set {_nowner} to {_nownerid}
+    if "%{_nowner}%" is "<none>":
+        set {_nowner} to {_owner}
+
+    set {_speed} to generic movement speed attribute of {_horse}#ウマの速さ
+    set {_speed} to {_speed}*43 
+    set {_jump} to horse jump strength attribute of {_horse} #ウマのジャンプ力
+    set {_jump} to 3.3135*{_jump}*{_jump} + 2.3913*{_jump} - 0.402
+    set {_health} to max health of {_horse} #ウマの体力
+    set {_health} to {_health}*2
+
+
+#1行目に「horse」と書いてあるとき-------------------------------------------------
+    if line 1 is "horse":		
+
+        #1行目はウマの名前
+        set line 1 to "%{_name}%"
+
+        if line 2 is "owner":
+            set line 2 to "%{_owner}%" #ウマを飼いならした人
+        else if line 2 is "ownerid":
+            set line 2 to "%{_ownerid}%" #ウマを飼いならした人のID
+        else if line 2 is "nowner":
+            set line 2 to "%{_nowner}%" #ウマの所有者
+        else if line 2 is "speed":
+            set line 2 to "%{_speed}% m/s" #ウマの速さ
+        else if line 2 is "jump":
+            set line 2 to "ジャンプ %{_jump}% m" #ウマのジャンプ力
+        else if line 2 is "health":
+            set line 2 to "体力 %{_health}%" #ウマの体力
+        else:
+            set line 2 to "%{_speed}% m/s" #ウマの速さ
+
+
+        if line 3 is "owner":
+            set line 3 to "%{_owner}%" #ウマを飼いならした人
+        else if line 3 is "ownerid":
+            set line 3 to "%{_ownerid}%" #ウマを飼いならした人のID
+        else if line 3 is "nowner":
+            set line 3 to "%{_nowner}%" #ウマの所有者
+        else if line 3 is "speed":
+            set line 3 to "%{_speed}% m/s" #ウマの速さ
+        else if line 3 is "jump":
+            set line 3 to "ジャンプ %{_jump}% m" #ウマのジャンプ力
+        else if line 3 is "health":
+            set line 3 to "体力 %{_health}%" #ウマの体力
+        else:
+            set line 3 to "ジャンプ %{_jump}% m" #ウマのジャンプ力
+
+
+
+        if line 4 is "owner":
+            set line 4 to "%{_owner}%" #ウマを飼いならした人
+        else if line 4 is "ownerid":
+            set line 4 to "%{_ownerid}%" #ウマを飼いならした人のID
+        else if line 4 is "nowner":
+            set line 4 to "%{_nowner}%" #ウマの所有者
+        else if line 4 is "speed":
+            set line 4 to "%{_speed}% m/s" #ウマの速さ
+        else if line 4 is "jump":
+            set line 4 to "ジャンプ %{_jump}% m" #ウマのジャンプ力
+        else if line 4 is "health":
+            set line 4 to "体力 %{_health}%" #ウマの体力
+        else:
+            set line 4 to "体力 %{_health}%" #ウマの体力
+            
+
+
+
+#2行目に「horse」と書いてあるとき-------------------------------------------------
+    if line 2 is "horse":		
+
+        #2行目はウマの名前
+        set line 2 to "%{_name}%"
+
+        if line 3 is "owner":
+            set line 3 to "%{_owner}%" #ウマを飼いならした人
+        else if line 3 is "ownerid":
+            set line 3 to "%{_ownerid}%" #ウマを飼いならした人のID
+        else if line 3 is "nowner":
+            set line 3 to "%{_nowner}%" #ウマの所有者
+        else if line 3 is "speed":
+            set line 3 to "%{_speed}% m/s" #ウマの速さ
+        else if line 3 is "jump":
+            set line 3 to "ジャンプ %{_jump}% m" #ウマのジャンプ力
+        else if line 3 is "health":
+            set line 3 to "体力 %{_health}%" #ウマの体力
+        else:
+            set line 3 to "%{_nowner}%" #ウマの所有者のID
+
+
+        if line 4 is "owner":
+            set line 4 to "%{_owner}%" #ウマを飼いならした人
+        else if line 4 is "ownerid":
+            set line 4 to "%{_ownerid}%" #ウマを飼いならした人のID
+        else if line 4 is "nowner":
+            set line 4 to "%{_nowner}%" #ウマの所有者
+        else if line 4 is "speed":
+            set line 4 to "%{_speed}% m/s" #ウマの速さ
+        else if line 4 is "jump":
+            set line 4 to "ジャンプ %{_jump}% m" #ウマのジャンプ力
+        else if line 4 is "health":
+            set line 4 to "体力 %{_health}%" #ウマの体力
+        else:
+            set line 4 to "%{_speed}% m/s" #ウマの速さ
+            
+
+#諸元表示コマンド==================================================================================================
+command /horse-spec:
+    trigger:
+        #プレイヤーが何にも乗っていないときは終了
+        if player is not riding:
+            stop
+
+        #乗っているウマを取得
+        set {_horse} to player's vehicle
+
+        set {_name} to name of {_horse} #ウマの名前
+        if "%{_name}%" is "<none>": # 名前がないときは、エンティティの種類を表示
+            set {_name} to {_horse}
+        
+        #ウマの情報を計算するなど
+        set {_ownerid} to owner of {_horse} #ウマの所有者のID
+        set {_owner} to display name of owner of {_horse} #ウマの所有者
+        set {_nownerid} to {new_owner::%{_horse}%} #ウマの所有者のID
+        set {_nowner} to display name of {new_owner::%{_horse}%} #ウマの所有者
+        set {_speed} to generic movement speed attribute of {_horse}#ウマの速さ
+        set {_speed} to {_speed}*43 
+        set {_jump} to horse jump strength attribute of {_horse} #ウマのジャンプ力
+        set {_jump} to 3.3135*{_jump}*{_jump} + 2.3913*{_jump} - 0.402
+        set {_health} to max health of {_horse} #ウマの体力
+        set {_health} to {_health}*2
+
+        #ステータスの色を作成
+        if {_speed} is more than 14.0:
+            set {_speedcolor} to "&b" # 14.0m/s以上はSSクラス(青)
+        else if {_speed} is more than 13.0:
+            set {_speedcolor} to "&a" # 13.0～13.75m/sはSクラス(緑)
+        else if {_speed} is more than 12.0:
+            set {_speedcolor} to "&6" # 12.0～13.0m/sはAクラス(橙)
+        else if {_speed} is more than 10.5:
+            set {_speedcolor} to "&e" # 10.5～12.0m/sはBクラス(黄)
+        else:
+            set {_speedcolor} to "&c" # 10.5m/s以下はCクラス(赤)
+
+        if {_jump} is more than 5.0:
+            set {_jumpcolor} to "&b" 
+        else if {_jump} is more than 4.0:
+            set {_jumpcolor} to "&a" 
+        else if {_jump} is more than 3.0:
+            set {_jumpcolor} to "&6" 
+        else if {_jump} is more than 2.0:
+            set {_jumpcolor} to "&e" 
+        else:
+            set {_jumpcolor} to "&c" 
+
+        if {_health} is more than 27.0:
+            set {_healthcolor} to "&b" 
+        else if {_health} is more than 24.0:
+            set {_healthcolor} to "&a" 
+        else if {_health} is more than 21.0:
+            set {_healthcolor} to "&6" 
+        else if {_health} is more than 18.0:
+            set {_healthcolor} to "&e" 
+        else:
+            set {_healthcolor} to "&c" 
+
+
+        send "%{_name}%の諸元" to the player
+        send "飼いならした人：%{_owner}% ( %{_ownerid}% )" to the player
+        send "所有者：%{_nowner}% ( %{_nownerid}% )" to the player
+        send "スピード：%{_speedcolor}%%{_speed}% m/s&r 、 ジャンプ：%{_jumpcolor}%%{_jump}% m&r 、 体力：%{_healthcolor}%%{_health}%" to the player
+
+
+
+
+

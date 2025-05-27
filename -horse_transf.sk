@@ -1,0 +1,105 @@
+# セレクトホールにおいて、ウマを海外に移籍して、お金を得るスクリプト。
+# 作：ぎまっち
+# 2025/02/16 初版
+# 2025/04/13 on rightclick ～ の部分における、看板の検知方法を変更
+#
+
+
+on rightclick:
+	"%event-block%" contains "SIGN"			#(右クリックした)ブロックは看板です(skript 2.10 仕様)
+
+	line 1 is "&f&l査定額計算"	#
+
+	loop all entities:
+
+		#移籍が可能かどうか判定==================================================================================================
+
+		set {_horse} to loop-entity
+		distance between the loop-entity and the location (-1399, 64, -1543) is less than 4 #移籍地点にウマがいる
+		set {_name} to name of {_horse} #ウマの名前
+		set {_owner} to owner of {_horse} #ウマの所有者
+
+		if "%{_owner}%" is "<none>":
+			send "飼いならされていない馬は移籍できません" to player
+			exit
+
+		set {_isekiflag} to false #まずは移籍しない設定
+
+		if "%{_horse}%" is "horse":
+			set {_isekiflag} to true
+		if "%{_horse}%" is "donkey":
+			set {_isekiflag} to true
+		if "%{_horse}%" is "mule":
+			set {_isekiflag} to true
+		if "%{_horse}%" is "undead horse":
+			set {_isekiflag} to true
+		if "%{_horse}%" is "skeleton horse":
+			set {_isekiflag} to true
+
+		if {_isekiflag} is false: # 指定エンティティ以外は移籍できない
+			send "%{_name}%は移籍対象外のエンティティです。" to player
+			exit
+
+		#send "%{_name}%は移籍可能です。" to player
+
+		#査定額計算==================================================================================================
+
+		set {_speed} to generic movement speed attribute of {_horse}#ウマの速さ
+		set {_jump} to horse jump strength attribute of {_horse} #ウマのジャンプ力
+		set {_health} to max health of {_horse} #ウマの体力
+
+		set {_kaigaispeed} to {_speed} * 1481.4815
+		set {_kaigaijump} to {_jump} * 500
+		set {_kaigaihealth} to {_health} * 33.3334
+		set {_kaigaigoukei} to max( {_kaigaispeed} + {_kaigaijump} + {_kaigaihealth} , 1000 )
+
+		send "%{_name}%の査定額は、" to player
+		send "スピード:%{_kaigaispeed}% ジャンプ:%{_kaigaijump}% 体力:%{_kaigaihealth}%" to player
+		send "合計 &e%{_kaigaigoukei}%&r モッサリです。(下限1000モッサリ)" to player
+
+
+		#移籍する==================================================================================================
+
+
+		line 2 is "&e&l移籍"	#
+
+		teleport {_horse} to location(-1399, -200, -1543) # 移籍実行
+
+		add {_kaigaigoukei} to player's money # お金を入れる
+
+		play sound "minecraft:ui.toast.challenge_complete" with volume 1.5 to the player # 移籍効果音を流す
+
+		send "あなたの口座残高は、%player's money% です。" to player
+
+
+#諸元表示コマンド==================================================================================================
+command /horse-transfer:
+	trigger:
+		#プレイヤーが何にも乗っていないときは終了
+		if player is not riding:
+			exit
+
+		#乗っているウマを取得
+		set {_horse} to player's vehicle
+
+		set {_name} to name of {_horse} #ウマの名前
+        
+		#査定額計算==================================================================================================
+
+		set {_speed} to generic movement speed attribute of {_horse}#ウマの速さ
+		set {_jump} to horse jump strength attribute of {_horse} #ウマのジャンプ力
+		set {_health} to max health of {_horse} #ウマの体力
+
+		set {_kaigaispeed} to {_speed} * 1481.4815
+		set {_kaigaijump} to {_jump} * 500
+		set {_kaigaihealth} to {_health} * 33.3334
+		set {_kaigaigoukei} to max( {_kaigaispeed} + {_kaigaijump} + {_kaigaihealth} , 1000 )
+
+		send "%{_name}%の査定額は、" to player
+		send "スピード:%{_kaigaispeed}% ジャンプ:%{_kaigaijump}% 体力:%{_kaigaihealth}%" to player
+		send "合計 &e%{_kaigaigoukei}%&r モッサリです。(下限1000モッサリ)" to player
+
+
+
+
+

@@ -1,0 +1,30 @@
+
+
+# バス，停まります
+
+command /tomeru:
+	cooldown: 12 seconds
+	trigger:
+		# マインカートに乗っていることが起動条件
+		the player is riding a minecart
+		# 乗り物にstopタグを付与
+		play sound "etc.tsugitomarimasu" with volume 1.5 to the player
+		make the player execute command "/train tags add stop"
+		send action bar "&c【次，停まります】" to player
+		wait 3 seconds
+		send action bar "&c【次，停まります】" to player
+		wait 3 seconds
+		send action bar "&c【次，停まります】" to player
+		wait 3 seconds
+		send action bar "&c【次，停まります】" to player
+		wait 3 seconds
+		# 乗り物からstopタグを解除
+		send action bar "&e【停車を解除しました】" to player
+		make the player execute command "/train tags remove stop"
+
+
+
+#on chat:
+	#broadcast "%event-player%"
+	#{tomeruFlag} is true
+	#cancel event

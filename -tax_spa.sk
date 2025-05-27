@@ -1,0 +1,300 @@
+# ■温泉スクリプト
+
+#
+# かすみん氏がサクラフト用に作ったものをぎまっちがニコ鉄マイクラ部用に改造したもの
+# 2025/02/08 各温泉に効能を追加
+# 2025/04/12 on rightclick ～ の部分における、看板の検知方法を変更
+#
+
+
+
+# ◇看板設置時，1行目に"spa"と入れると温泉の種別を自動設定
+
+on sign change:				#看板を編集した直後に…
+
+	set {_bathfee} to 50 #入湯税(開湯者)
+	set {_tax} to 150 #入湯税(国庫)
+
+	set {_open} to 500 #開湯税
+
+	If line 1 is "温泉":
+		cancel the event
+	If line 1 is "&f温泉":
+		cancel the event
+	If line 1 is "spa":		#1行目に「spa」と書いてあるとき
+		set line 1 to "&f温泉"
+		set line 3 to "入湯税 %{_bathfee}+{_tax}% ﾓｯｻﾘ"
+		set {_kounou} to random integer from 0 to 32
+		if {_kounou} = 0:
+			set line 2 to "&e&lぜかましの湯"	#移動速度上昇
+		else if {_kounou} = 1:
+			set line 2 to "&e&lシンザンの湯"	#移動速度上昇
+		else if {_kounou} = 2:
+			set line 2 to "&e&lシン・アスカの湯"	#移動速度上昇
+		else if {_kounou} = 3:
+			set line 2 to "&e&lとりもちの湯"	#移動速度低下
+		else if {_kounou} = 4:
+			set line 2 to "&e&l雪歩の湯"		#採掘速度上昇
+		else if {_kounou} = 5:
+			set line 2 to "&e&lドリランドの湯"	#採掘速度上昇
+		else if {_kounou} = 6:
+			set line 2 to "&e&l量子もつれの湯"	#採掘速度低下
+		else if {_kounou} = 7:
+			set line 2 to "&e&l霧雨の湯"		#攻撃力上昇
+		else if {_kounou} = 8:
+			set line 2 to "&e&l旅人の心の湯"	#攻撃力上昇
+		else if {_kounou} = 9:
+			set line 2 to "&e&lミーティアの湯"	#攻撃力上昇
+		else if {_kounou} = 10:
+			set line 2 to "&e&lバケツの湯"		#即時回復
+		else if {_kounou} = 11:
+			set line 2 to "&e&l博麗の湯"		#跳躍力上昇
+		else if {_kounou} = 12:
+			set line 2 to "&e&l初音の湯"		#再生能力
+		else if {_kounou} = 13:
+			set line 2 to "&e&l青葉の湯"		#再生能力
+		else if {_kounou} = 14:
+			set line 2 to "&e&lごまだれ～の湯"	#再生能力
+		else if {_kounou} = 15:
+			set line 2 to "&e&l千早の湯"		#再生能力
+		else if {_kounou} = 16:
+			set line 2 to "&e&l結界の湯"		#ダメージ耐性
+		else if {_kounou} = 17:
+			set line 2 to "&e&lフェイスシフトの湯"	#ダメージ耐性
+		else if {_kounou} = 18:
+			set line 2 to "&e&l修造の湯"		#火炎耐性
+		else if {_kounou} = 19:
+			set line 2 to "&e&lLCLの湯"		#水中呼吸
+		else if {_kounou} = 20:
+			set line 2 to "&e&l葉隠の湯"		#透明化、暗視
+		else if {_kounou} = 21:
+			set line 2 to "&e&lピコハンの湯"	#弱体化
+		else if {_kounou} = 22:
+			set line 2 to "&e&lマコモ湯"		#毒、吐き気、盲目
+		else if {_kounou} = 23:
+			set line 2 to "&e&lリングフィットの湯"	#体力増強
+		else if {_kounou} = 24:
+			set line 2 to "&e&l尚文の湯"		#衝撃吸収
+		else if {_kounou} = 25:
+			set line 2 to "&e&lマキシムトマトの湯"	#満腹度回復
+		else if {_kounou} = 26:
+			set line 2 to "&e&lアグネスの湯"	#発行、暗視
+		else if {_kounou} = 27:
+			set line 2 to "&e&l麗日の湯"		#浮遊
+		else if {_kounou} = 28:
+			set line 2 to "&e&l依神妹の湯"		#幸運
+		else if {_kounou} = 29:
+			set line 2 to "&e&l依神姉の湯"		#不運
+		else if {_kounou} = 30:
+			set line 2 to "&e&lシータの湯"		#落下速度低下
+		else if {_kounou} = 31:
+			set line 2 to "&e&l珊瑚宮の湯"		#コンジットパワー
+		else if {_kounou} = 32:
+			set line 2 to "&e&l伊401の湯"		#イルカの好意
+		set line 4 to "%player%"
+
+		remove {_tsukutta} from the player's money # 開湯税を徴収する
+		set {_public} to "Nicotetsu" parsed as offlineplayer
+		add {_open} to {_public}'s money
+
+		message "<lime>[spa]<white> 温泉を作った 開湯税 <yellow>%{_open}%<white> ﾓｯｻﾘを支払った" to player
+
+
+# ◇温泉の看板を右クリックしたとき効果発動
+
+on rightclick:
+
+	set {_bathfee} to 50 #入湯税(開湯者)
+	set {_tax} to 150 #入湯税(国庫)
+
+	#
+	# 前提
+	#
+	"%event-block%" contains "SIGN"			#(右クリックした)ブロックは看板です(skript 2.10 仕様)
+	#block is a sign				#(右クリックした)ブロックは看板です
+	the block at the player is a water		#プレイヤーのいるブロックは水です
+	line 1 is "&f温泉"	#(右クリックした)ブロックの1行目には「温泉」とある
+	#If the player's money < {_bathfee} :		#プレイヤーの所持金が20ガバス以上である
+	#	message "<lime>[spa]<white> 資金が足りません <white> 入湯税 <yellow>200<white> ﾓｯｻﾘ が必要です" to player
+	#	exit
+
+	#
+	# 入湯税は払って頂こう
+	#
+	remove {_bathfee}+{_tax} from the player's money
+	message "<lime>[spa]<white> 入湯税 <yellow>%{_bathfee}+{_tax}%<white> ﾓｯｻﾘ を支払った" to player
+
+	set {_okami} to line 4 parsed as offlineplayer # 開湯者に50モッサリ払う
+	add {_bathfee} to {_okami}'s money
+
+	set {_public} to "Nicotetsu" parsed as offlineplayer # 国庫に150モッサリ払う
+	add {_tax} to {_public}'s money
+
+	message "<lime>[spa]<white> %player% があなたの温泉に入りました" to {_okami}
+
+
+	#
+	# すでにかかっているポーション効果を(悪性も含んで)打ち消す
+	#
+	remove speed from the player
+	remove slowness from the player
+	remove haste from the player
+	remove mining fatigue from the player
+	remove strength from the player
+	remove instant health from the player
+	remove instant damage from the player
+	remove jump boost from the player
+	remove nausea from the player
+	remove regeneration from the player
+	remove resistance from the player
+	remove fire resistance from the player
+	remove water breathing from the player
+	remove invisibility from the player
+	remove blindness from the player
+	remove night vision from the player
+	#remove hunger from the player
+	remove weakness from the player
+	remove poison from the player
+	remove wither from the player
+	remove fast digging from the player
+	remove Health Boost from the player
+	remove Absorption from the player
+	remove Saturation from the player
+	remove glowing from the player
+	remove levitation from the player
+	remove luck from the player
+	remove unluck from the player
+	remove slow falling from the player
+	remove conduit power from the player
+	remove dolphins grace from the player
+	remove bad omen from the player
+	remove hero of the village from the player
+	remove darkness from the player
+
+
+
+
+	#
+	# 湯あたり判定(湯あたりすると温泉の効果が得られない)
+	#
+	chance of 5%:
+		apply nausea 1 to the player for 30 seconds
+		set the player's food level to 0
+		message " <light purple> ＊おおっと＊<white> 湯あたりしてしまった！" to player
+		exit
+
+
+	#
+	# 温泉の効能を付与する
+	#
+	#message "<orange><white> 温泉の効能によって，体力再生能力を得た" to player
+	#再生能力は標準で付与される
+	apply regeneration 1 to the player for 15 seconds
+
+	if line 2 of clicked block is "&e&lぜかましの湯":		#移動速度上昇
+		apply speed 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、移動速度上昇を得た" to player
+	else if line 2 of clicked block is "&e&lシンザンの湯":		#移動速度上昇
+		apply speed 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、移動速度上昇を得た" to player
+	else if line 2 of clicked block is "&e&lシン・アスカの湯":	#移動速度上昇
+		apply speed 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、移動速度上昇を得た" to player
+	else if line 2 of clicked block is "&e&lとりもちの湯":		#移動速度低下
+		apply slowness 1 to the player for 120 seconds
+		message "&f 温泉の効能によって、移動速度低下を得た" to player
+	else if line 2 of clicked block is "&e&l雪歩の湯":		#採掘速度上昇
+		apply haste 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、採掘速度上昇を得た" to player
+	else if line 2 of clicked block is "&e&lドリランドの湯":	#採掘速度上昇
+		apply haste 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、採掘速度上昇を得た" to player
+	else if line 2 of clicked block is "&e&l量子もつれの湯":	#採掘速度低下
+		apply mining fatigue 1 to the player for 120 seconds
+		message "&f 温泉の効能によって、採掘速度低下を得た" to player
+	else if line 2 of clicked block is "&e&l霧雨の湯":		#攻撃力上昇
+		apply strength 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、攻撃力上昇を得た" to player
+	else if line 2 of clicked block is "&e&l旅人の心の湯":		#攻撃力上昇
+		apply strength 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、攻撃力上昇を得た" to player
+	else if line 2 of clicked block is "&e&lミーティアの湯":	#攻撃力上昇
+		apply strength 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、攻撃力上昇を得た" to player
+	else if line 2 of clicked block is "&e&lバケツの湯":		#即時回復
+		apply instant health 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、即時回復を得た" to player
+	else if line 2 of clicked block is "&e&l博麗の湯":		#跳躍力上昇
+		apply jump boost 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、跳躍力上昇を得た" to player
+	else if line 2 of clicked block is "&e&l初音の湯":		#再生能力
+		apply regeneration 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、再生能力を得た" to player
+	else if line 2 of clicked block is "&e&l青葉の湯":		#再生能力
+		apply regeneration 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、再生能力を得た" to player
+	else if line 2 of clicked block is "&e&lごまだれ～の湯":	#再生能力
+		apply regeneration 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、再生能力を得た" to player
+	else if line 2 of clicked block is "&e&l千早の湯":		#再生能力
+		apply regeneration 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、再生能力を得た" to player
+	else if line 2 of clicked block is "&e&l結界の湯":		#ダメージ耐性
+		apply resistance 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、ダメージ耐性を得た" to player
+	else if line 2 of clicked block is "&e&lフェイスシフトの湯":	#ダメージ耐性
+		apply resistance 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、ダメージ耐性を得た" to player
+	else if line 2 of clicked block is "&e&l修造の湯":		#火炎耐性
+		apply fire resistance 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、火炎耐性を得た" to player
+	else if line 2 of clicked block is "&e&lLCLの湯":		#水中呼吸
+		apply water breathing 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、水中呼吸を得た" to player
+	else if line 2 of clicked block is "&e&l葉隠の湯":		#透明化、暗視
+		apply invisibility 1 to the player for 180 seconds
+		apply night vision 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、透明化と暗視を得た" to player
+	else if line 2 of clicked block is "&e&lピコハンの湯":		#弱体化
+		apply weakness 1 to the player for 120 seconds
+		message "&f 温泉の効能によって、弱体化を得た" to player
+	else if line 2 of clicked block is "&e&lマコモ湯":		#毒、吐き気、盲目
+		apply poison 1 to the player for 120 seconds
+		apply nausea 1 to the player for 120 seconds
+		apply blindness 1 to the player for 120 seconds
+		message "&f うちのお風呂…1年半お湯変えてません！" to player
+	else if line 2 of clicked block is "&e&lリングフィットの湯":	#体力増強
+		apply Health Boost 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、体力増強を得た" to player
+	else if line 2 of clicked block is "&e&l尚文の湯":		#衝撃吸収
+		apply Absorption 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、衝撃吸収を得た" to player
+	else if line 2 of clicked block is "&e&lマキシムトマトの湯":	#満腹度回復
+		apply Saturation 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、満腹度回復を得た" to player
+	else if line 2 of clicked block is "&e&lアグネスの湯":		#発行、暗視
+		apply glowing 1 to the player for 180 seconds
+		apply night vision 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、発光と暗視を得た" to player
+	else if line 2 of clicked block is "&e&l麗日の湯":		#浮遊
+		apply levitation 1 to the player for 120 seconds
+		message "&f 温泉の効能によって、浮遊を得た" to player
+	else if line 2 of clicked block is "&e&l依神妹の湯":		#幸運
+		apply luck 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、幸運を得た" to player
+	else if line 2 of clicked block is "&e&l依神姉の湯":		#不運
+		apply unluck 1 to the player for 120 seconds
+		message "&f 温泉の効能によって、不運を得た" to player
+	else if line 2 of clicked block is "&e&lシータの湯":		#落下速度低下
+		apply slow falling 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、落下速度低下を得た" to player
+	else if line 2 of clicked block is "&e&l珊瑚宮の湯":		#コンジットパワー
+		apply conduit power 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、コンジットパワーを得た" to player
+	else if line 2 of clicked block is "&e&l伊401の湯":		#イルカの好意
+		apply dolphins grace 1 to the player for 180 seconds
+		message "&f 温泉の効能によって、イルカの好意を得た" to player
+
+
+
+

@@ -1,0 +1,694 @@
+
+# ◇■◇オプション◇■◇
+options:
+	# ゲーム
+	nfh display name : "&7[&aOrganizer&7]&r"
+	# 徒歩ペナルティが発生するまでのターン数（5ターンで1秒）
+	walk penalty margin: 300
+	# チェックポイントの点数をつけるときの，傾きに割る数値と切片
+	cp point slope: 10
+	cp point intercept: 5
+	# サバイバルモードで，この点数に到達した人の勝ち
+	survival mode target score: 1000
+
+#【看板の設置】
+# ゲームを開始・終了したりチェックポイントとなる看板を設置したりする命令群
+on sign change:
+  # 条件チェック
+	the first 4 characters of the line 1 is "nfh "  # 1行目の冒頭4字が"nfh "であること
+	the player is an operator												# 実行者がオペレーターであること
+	the player's gamemode is creative								# 実行者のゲームモードがクリエイティブであること
+	# 本処理
+	# インスタンス開始看板を作成
+	if the part of the line 1 from 5 to 9 is "start":					# 1行目の(1から数えて)5～9文字目が"start"のとき
+		set the line 1 to "&a&l[nfh:start]"
+		set the line 2 to "左Cl→ｲﾝｽﾀﾝｽ開始"
+	# インスタンス終了看板を作成
+	else if the part of the line 1 from 5 to 7 is "end":			# 1行目の(1から数えて)5～7文字目が"start"のとき
+		set the line 1 to "&c&l[nfh:end]"
+		set the line 2 to "左Cl→ｲﾝｽﾀﾝｽ終了"
+	# サバイバルモードでゲームを開始する看板を作成
+	else if the part of the line 1 from 5 to 12 is "survival":			# 1行目の(1から数えて)5～7文字目が"survival"のとき
+		set the line 1 to "&9&l[nfh:survival]"
+		set the line 2 to "左Cl→ｻﾊﾞｲﾊﾞﾙｹﾞｰﾑ開始"
+	# チェックポイント(CP)を作成
+	# - 看板2行目にはチェックポイントの名称を入力する
+	# - 看板3・4行目にはチェックポイントのおおよその位置を入力する
+	else if the part of the line 1 from 5 to 6 is "cp":
+		set {_id} to join (6 random characters between "a" and "z") with ""		# 6字のランダムIDを作成
+		set {_name} to the line 2																							# CP名を取得
+		set {_desc} to concat(the line 3, the line 4)													# CP位置説明を取得
+		set {_loc} to the event-block's location															# CP座標を説明
+		set {nfh::%{_id}%::name} to {_name}																		# リスト変数に保存
+		set {nfh::%{_id}%::desc} to {_desc}
+		set {nfh::%{_id}%::loc} to {_loc}
+		set {nfh::%{_id}%::far} to false
+		message "%{@nfh display name}% CP &a%{_name}% &7(ID:%{_id}%) &rを設定しました。" to the player
+		message " &7● &r位置説明&7: &9%{_desc}%" to the player
+		message " &7● &r設置座標&7: &9%{_loc}%" to the player
+		set the line 1 to "&a&l[nfh:cp-%{_id}%]"															# 1行目は装飾したものに書き換える
+		set the line 3 to "左Cl→CP到達処理"																		# 3行目は操作説明に書き換える
+		set the line 4 to ""																									# 4行目は空に書き換える
+	# 遠方チェックポイント(FP)を作成
+	# - 看板2行目にはチェックポイントの名称を入力する
+	# - 看板3・4行目にはチェックポイントのおおよその位置を入力する
+	else if the part of the line 1 from 5 to 6 is "fp":
+		set {_id} to join (6 random characters between "a" and "z") with ""		# 6字のランダムIDを作成
+		set {_name} to the line 2																							# CP名を取得
+		set {_desc} to concat(the line 3, the line 4)													# CP位置説明を取得
+		set {_loc} to the event-block's location															# CP座標を説明
+		set {nfh::%{_id}%::name} to {_name}																		# リスト変数に保存
+		set {nfh::%{_id}%::desc} to {_desc}
+		set {nfh::%{_id}%::loc} to {_loc}
+		set {nfh::%{_id}%::far} to true
+		message "%{@nfh display name}% FP &a%{_name}% &7(ID:%{_id}%) &rを設定しました。" to the player
+		message " &7● &r位置説明&7: &9%{_desc}%" to the player
+		message " &7● &r設置座標&7: &9%{_loc}%" to the player
+		set the line 1 to "&d&l[nfh:fp-%{_id}%]"															# 1行目は装飾したものに書き換える
+		set the line 3 to "左Cl→CP到達処理"																		# 3行目は操作説明に書き換える
+		set the line 4 to "左Cl+Sft→CP到達+戻"																# 4行目は操作説明に書き換える
+	# 回復ポイント(RP)を作成
+	# - 看板2行目にはチェックポイントの名称を入力する
+	# - 看板3・4行目にはチェックポイントのおおよその位置を入力する
+	else if the part of the line 1 from 5 to 6 is "rp":
+		set {_id} to join (6 random characters between "a" and "z") with ""		# 6字のランダムIDを作成
+		set {_name} to the line 2																							# CP名を取得
+		set {_desc} to concat(the line 3, the line 4)													# CP位置説明を取得
+		set {_loc} to the event-block's location															# CP座標を説明
+		set {nfhr::%{_id}%::name} to {_name}																	# リスト変数に保存
+		set {nfhr::%{_id}%::desc} to {_desc}
+		set {nfhr::%{_id}%::loc} to {_loc}
+		message "%{@nfh display name}% RP &a%{_name}% &7(ID:%{_id}%) &rを設定しました。" to the player
+		message " &7● &r位置説明&7: &9%{_desc}%" to the player
+		message " &7● &r設置座標&7: &9%{_loc}%" to the player
+		set the line 1 to "&b&l[nfh:rp-%{_id}%]"														# 1行目は装飾したものに書き換える
+		set the line 3 to "左Cl→徒歩ﾍﾟﾅ回復"																	# 3行目は操作説明に書き換える
+
+
+#【看板の破壊】
+# CP看板を破壊すると，CPリストから当該内容を消去します。
+on break a sign:
+	# 条件チェック
+	the part of the line 1 from 3 to 9 is "&l[nfh:"		# 1行目の(1から数えて)3～9文字が"&l[nfh"であること
+	the player is an operator													# 実行者がオペレーターであること
+	the player's gamemode is creative									# 実行者のゲームモードがクリエイティブであること
+	# 本処理
+	if the part of the line 1 from 1 to 12 is "&a&l[nfh:cp-":					# CP看板を検知したとき
+		set {_id} to the part of the line 1 from 13 to 18								# 看板からIDを取得し
+		execute player command "/nfh delete %{_id}%"										# CP削除コマンドを実行
+	else if the part of the line 1 from 1 to 12 is "&d&l[nfh:fp-":		# FP看板を検知したとき
+		set {_id} to the part of the line 1 from 13 to 18								# 看板からIDを取得し
+		execute player command "/nfh delete %{_id}%"										# CP削除コマンドを実行
+	else if the part of the line 1 from 1 to 12 is "&b&l[nfh:rp-":		# RP看板を検知したとき
+		set {_id} to the part of the line 1 from 13 to 18								# 看板からIDを取得し
+		execute player command "/nfh delete %{_id}%"										# CP削除コマンドを実行
+
+
+#【不法な方法での看板設置を禁止】
+# NFH関連の看板と誤認識される看板は最初から設置を認めない。
+on sign change:
+  # 条件チェック
+	the part of the line 1 from 3 to 9 is "&l[nfh:"		# 1行目の(1から数えて)3～9文字が"&l[nfh"であること
+	the player isn't an operator											# 実行者がオペレーターではないこと
+	# 本処理
+	message "%{@nfh display name}% &4NFH関連の書式に類似した看板設置は禁じられています。" to the player
+	cancel the event	
+
+
+#【看板の変更禁止措置】
+# NFHに関わる看板は，バグ防止のため，非破壊での書き換えを禁止します。
+on right click on a sign:
+	# 条件チェック
+	the part of the line 1 from 3 to 9 is "&l[nfh:"  # 1行目の(1から数えて)3～9文字が"&l[nfh"であること
+	# 本処理
+	message "%{@nfh display name}% &4NFH関連看板を変更するには，一度破壊して設置し直す必要があります。" to the player
+	cancel the event
+
+
+#【看板の破壊禁止措置】
+# NFHに関わる看板は，OP以外の破壊を禁じます。
+on break a sign:
+	# 条件チェック
+	the part of the line 1 from 3 to 9 is "&l[nfh:"		# 1行目の(1から数えて)3～9文字が"&l[nfh"であること
+	the player isn't an operator											# 実行者がオペレーターではないこと
+	# 本処理
+	message "%{@nfh display name}% &4NFH関連の看板は，OP権限者以外の破壊は禁じられています。" to the player
+	cancel the event
+
+
+#【サバイバルモードでゲームを開始】
+# 
+on left click on a sign:
+	# 条件チェック
+	the line 1 is "&9&l[nfh:survival]"			# サバイバルモードの開始看板であること
+	the player's gamemode is survival				# 実行者のゲームモードがサバイバルであること
+	# その他条件を満たしていない場合はエラーを表示して関数終了
+	if {nfhm::*} doesn't exist:																		# インスタンスがない場合
+		message "%{@nfh display name}% &4ゲームのインスタンスが作成されていません。" to the player
+		exit
+	if {nfhm::status} isn't "ready":															# インスタンスが「準備中」でない場合
+		message "%{@nfh display name}% &4ゲームが準備中のときだけゲームを始められます。" to the player
+		exit
+	if {nfhm::dealer} isn't the player's uuid:										# 発動者がインスタンスの親でない場合
+		message "%{@nfh display name}% &4あなたはゲームの親ではありません。" to the player
+		exit
+	set {_p::*} to the indexes of {nfhm::players::*}							# 参加プレイヤーリストからインデックスのみ取得。
+	if the size of {_p::*} isn't between 1 and 12:								# プレイヤーが3～12名でない場合
+		message "%{@nfh display name}% &4プレイヤー数は3～12名である必要があります。(%the size of {nfhm::players::*}%)" to the player
+		exit
+	# 本処理
+	set {nfhm::status} to "survival"
+	# このあとの処理は【ゲームの進行管理】に任せる
+	
+
+
+#【チェックポイント到達処理】
+# 
+on left click on a sign:
+	# 条件チェック
+	part of the line 1 from 1 to 12 is "&a&l[nfh:cp-"							# CP看板であること
+	the player's gamemode is adventure														# 実行者のゲームモードがアドベンチャーであること
+	# その他条件を満たしていない場合はエラーを表示して関数終了
+	if {nfhm::*} doesn't exist:																		# インスタンスがない場合
+		message "%{@nfh display name}% &4ゲームのインスタンスが作成されていません。" to the player
+		exit
+	if {nfhm::status} isn't "survival":														# インスタンスが「サバイバル」でない場合
+		message "%{@nfh display name}% &4この看板はゲーム中のみ有効です。" to the player
+		exit
+	set {_cps::*} to the indexes of {nfhm::cp::*}									# 選定済みCPリストからインデックス（＝ID）のみ抜き出し，
+	set {_id} to the part of the line 1 from 13 to 18							# 看板からCPのIDを取得し，
+	if {_cps::*} doesn't contain {_id}:														# もし，すでに選定済みのCP一覧に，今回のCPが含まれていなかったら，
+		message "%{@nfh display name}% &4この場所は有効なCPではありません。" to the player
+		exit
+	if {nfhm::arrive::*} exists:																	# 同一ターンにすでにCPに到着した人がいる場合
+		message "%{@nfh display name}% お手数ですが，もう一度CP看板をクリックしてください。" to the player
+		exit
+	# 本処理
+	set {nfhm::arrive::id} to {_id}																# 進行管理変数にIDと自身のUUIDを保存
+	set {nfhm::arrive::far} to false															# 遠方CPフラグを降ろしておく
+	set {nfhm::arrive::shift} to false														# シフトキーフラグを降ろしておく
+	set {nfhm::arrive::player} to the player's uuid
+	# このあとの処理は【ゲームの進行管理】に任せる
+
+
+#【遠方チェックポイント到達処理】
+# 
+on left click on a sign:
+	# 条件チェック
+	part of the line 1 from 1 to 12 is "&d&l[nfh:fp-"							# FP看板であること
+	the player's gamemode is adventure														# 実行者のゲームモードがアドベンチャーであること
+	# その他条件を満たしていない場合はエラーを表示して関数終了
+	if {nfhm::*} doesn't exist:																		# インスタンスがない場合
+		message "%{@nfh display name}% &4ゲームのインスタンスが作成されていません。" to the player
+		exit
+	if {nfhm::status} isn't "survival":														# インスタンスが「サバイバル」でない場合
+		message "%{@nfh display name}% &4この看板はゲーム中のみ有効です。" to the player
+		exit
+	set {_cps::*} to the indexes of {nfhm::cp::*}									# 選定済みCPリストからインデックス（＝ID）のみ抜き出し，
+	set {_id} to the part of the line 1 from 13 to 18							# 看板からCPのIDを取得し，
+	if {_cps::*} doesn't contain {_id}:														# もし，すでに選定済みのCP一覧に，今回のCPが含まれていなかったら，
+		message "%{@nfh display name}% &4この場所は有効なFPではありません。" to the player
+		exit
+	if {nfhm::arrive::*} exists:																	# 同一ターンにすでにCPに到着した人がいる場合
+		message "%{@nfh display name}% お手数ですが，もう一度CP看板をクリックしてください。" to the player
+		exit
+	# 本処理
+	set {nfhm::arrive::id} to {_id}																# 進行管理変数にIDと自身のUUIDを保存
+	set {nfhm::arrive::far} to true																# 遠方CPフラグを立てておく
+	if the player is sneaking:																		# プレイヤーがShiftキーを押していたならば，
+		set {nfhm::arrive::shift} to true														# シフトキーフラグを立てておく。
+	else:																													# そうでなければ，
+		set {nfhm::arrive::shift} to false													# シフトキーフラグを降ろしておく。
+	set {nfhm::arrive::player} to the player's uuid
+	# このあとの処理は【ゲームの進行管理】に任せる
+
+
+#【回復ポイント到達処理】
+# 
+on left click on a sign:
+	# 条件チェック
+	part of the line 1 from 1 to 12 is "&b&l[nfh:rp-"							# RP看板であること
+	the player's gamemode is adventure														# 実行者のゲームモードがアドベンチャーであること
+	# その他条件を満たしていない場合はエラーを表示して関数終了
+	if {nfhm::*} doesn't exist:																		# インスタンスがない場合
+		message "%{@nfh display name}% &4ゲームのインスタンスが作成されていません。" to the player
+		exit
+	if {nfhm::status} isn't "survival":														# インスタンスが「サバイバル」でない場合
+		message "%{@nfh display name}% &4この看板はゲーム中のみ有効です。" to the player
+		exit
+	# 本処理
+	set {nfhm::players::%the player's uuid%::penalty} to 0				# 徒歩ペナルティをゼロにする
+	message "%{@nfh display name}% &a徒歩ペナルティが精算されました。" to the player
+
+
+
+
+#【インスタンスの作成・ゲームの進行管理】
+on left click on a sign:
+	# 条件チェック
+	the line 1 is "&a&l[nfh:start]"					# インスタンスのスタート看板であること
+	the player's gamemode is survival				# 実行者のゲームモードがサバイバルであること
+	# 本処理（準備中）
+	if {nfhm::*} exists:																																# ⑴進行管理変数が存在する場合，
+		if {nfhm::status} isn't "ready":																									# ゲームのステータスが「準備中」でない場合，警告を出して，
+			message "%{@nfh display name}% &4NHFゲームには，準備中のときのみ参加表明できます。" to the player
+			exit																																						# 処理を中断する。
+		else:																																							# ゲームのステータスが「準備中」ならば，
+			if {nfhm::players::%the player's uuid%::*} doesn't exist:												# ⑶プレイヤー一覧に発動者が含まれない場合，
+				set {nfhm::players::%the player's uuid%::points} to 100												# プレイヤー一覧に発動者を追加し，点数を100与え，
+				set {nfhm::players::%the player's uuid%::penalty} to 0												# また徒歩ペナルティを設定し，
+				set {nfhm::players::%the player's uuid%::location} to the player's location		# 現在値を記録。
+				message "%{@nfh display name}% あなたはNFHインスタンスに参加しました。" to the player
+				exit																																					# この処理は中止
+			else:																																						# ⑶でないとき，以下の警告を表示。
+				message "%{@nfh display name}% &4あなたはすでにNFHインスタンスに参加しています。" to the player
+				exit																																					# この処理は中止
+	else:																																								# ⑴でないとき，
+		set {nfhm::status} to "ready"																											# ゲームのステータスを「準備中」に設定し，
+		set {nfhm::dealer} to the player's uuid																						# ゲームの親を発動者に設定し，
+		set {nfhm::players::%the player's uuid%::points} to 100														# プレイヤー一覧に発動者を追加し，点数を100与え，
+		set {nfhm::players::%the player's uuid%::penalty} to 0														# また徒歩ペナルティを設定
+		set {nfhm::players::%the player's uuid%::location} to the player's location				# 現在値を記録し，全体にNFH開催を告知。
+		broadcast "%{@nfh display name}% &e%the player's display name%がNFHインスタンスを作成しました。"
+		while {nfhm::status} is "ready":																									# ゲームのステータスが「準備中」のあいだは，
+			wait a second																																		# 次の処理に進まず待機する。
+		# 参加プレイヤー全員がゲーム参加条件を満たしているかチェック。
+		set {nfhStartLoc} to the player's location																				# ゲーム開始地点を記録
+		loop getNfhPlayers():																															# 参加プレイヤーごとに回す
+			set {_p} to player(loop-value)																									# ローカル変数にプレイヤーのオブジェクトを代入
+			if {_p}'s gamemode isn't survival:																							# サバイバルモードでなかった場合，メッセージを出して，
+				broadcast "%{@nfh display name}% &4%{_p}'s display name% がサバイバルモードではないため，インスタンスをキャンセルします。"
+				execute player command "/nfh stop"																						# インスタンスの強制停止コマンドを入力して，
+				exit																																					# 関数停止。
+			if {_p} can fly:																																# サバイバルモードでなかった場合，メッセージを出して，
+				broadcast "%{@nfh display name}% &4%{_p}'s display name% が飛行許可得ているため，インスタンスをキャンセルします。"
+				execute player command "/nfh stop"																						# インスタンスの強制停止コマンドを入力して，
+				exit																																					# 関数停止。
+			set {_p} 's gamemode to adventure																								# プレイヤーのモードをアドベンチャーにする
+		# 本処理（サバイバル）
+		if {nfhm::status} is "survival":																									# ゲームの種類⑸がサバイバルモードだったとき，簡単にルール説明して，
+			broadcast "%{@nfh display name}% &eサバイバルNFHを10秒後に開始します。ルールは次の通りです。"
+			broadcast " &7● &r各プレイヤーの初期持ち点は各100pts.です。"
+			broadcast " &7● &r提示される複数のCPそれぞれに一番乗りした人に加点されます。"
+			broadcast " &7● &r各CPに設定された有効秒数を過ぎると，CPから最遠のプレイヤーは減点されます。"
+			broadcast " &7● &r一定秒数以上の徒歩や，公共交通以外の乗りものに乗ると減点されます。"
+			broadcast " &7● &r先に 1000 点以上を獲得した人が登場すると終了です。"
+			broadcast " &7● &r各プレイヤーの点数はタブリストで，現在のCPや残り時間などはVVESTERでご確認ください。"
+			wait 5 seconds																							# ルールを読ませるために10秒待つ
+			send title "残り５秒前" with subtitle "サバイバルゲーム開始まで" to all players for a second
+			wait a seconds
+			send title "残り４秒前" with subtitle "サバイバルゲーム開始まで" to all players for a second
+			wait a seconds
+			send title "残り３秒前" with subtitle "サバイバルゲーム開始まで" to all players for a second
+			wait a second
+			send title "残り２秒前" with subtitle "サバイバルゲーム開始まで" to all players for a second
+			wait a second
+			send title "残り１秒前" with subtitle "サバイバルゲーム開始まで" to all players for a second
+			wait a second
+			send title "ゲームスタート" with subtitle "サバイバルゲーム開始まで" to all players for 3 seconds
+			loop getNfhPlayers():																				# 参加プレイヤーごとに回す
+				set {_id} to the loop-value																# そのUUIDを代入し
+				set {nfhm::bar::%{_id}%} to boss bar with id "nfh_%the player's uuid%" with title "徒歩可能時間（0秒）" with color green with progress 100
+				set bar style of {nfhm::bar::%{_id}%} to solid bar				# 徒歩ペナルティのボスバーを作って，
+				add player(loop-value) to {nfhm::bar::%{_id}%}						# そのプレイヤーにバーを加える
+			set {_p::*} to the indexes of {nfhm::players::*}						# 参加プレイヤーリストからインデックスのみ取得し，
+			set {_playerAmount} to the size of {_p::*}									# 参加人数を数えて，
+			loop ({_playerAmount} + 1) times:														# 人数+1回，以下を繰り返す。
+				drawCheckPoint(event-location)														# CP選定
+			while {nfhm::status} is "survival":													# 4tickごとにゲーム進行ターン処理。
+				# ◆チェックポイント到達処理
+				if {nfhm::arrive::*} exists:															# もし，だれかがチェックポイントに到着していた場合，
+					set {_id} to {nfhm::arrive::id}													# CPのIDを取得し，
+					set {_player} to {nfhm::arrive::player}									# プレイヤーのUUIDも取得し，
+					set {_point} to {nfhm::cp::%{_id}%::point}							# 獲得点数を取得して，
+					add {_point} to {nfhm::players::%{_player}%::points}		# プレイヤーに加算して，次のメッセージを流す
+					if {nfhm::arrive::far} = false:													# 通常CPならば，次のメッセージを流し，
+						broadcast "%{@nfh display name}% &d%player({_player})'s display name%&r が，CP &a%{nfh::%{_id}%::name}%&r にチェックイン！（&c+%{_point}%&rpts.）"
+						drawCheckPoint({nfh::%{_id}%::loc},{_id},false)				# 新しいCPを1つ選出して
+						set {_rand} to a random number between 0 and 4				# 0～4のランダム値を得て，
+					else:																										# 遠方CPならば，次のメッセージを流し，
+						broadcast "%{@nfh display name}% &d%player({_player})'s display name%&r が，RP &d%{nfh::%{_id}%::name}%&r にチェックイン！（&c+%{_point}%&rpts.）"
+						drawCheckPoint({nfh::%{_id}%::loc},{_id},true)				# 新しいFPを1つ選出して
+						set {_rand} to a random number between 0 and 3				# 0～3のランダム値を得て，
+					if {_rand} <= 1:																				# 25%（FP→33%）の確率で徒歩ペナルティ1/4
+						set {nfhm::players::%{_player}%::penalty} to ceil({nfhm::players::%{_player}%::penalty} / 4)
+						message " &7● &a到達特典&r：徒歩ペナルティが4分の1に減りました。" to player({_player})
+					else if {_rand} <= 3:																		# 50%（FP→67%）の確率で徒歩ペナルティ1/2
+						set {nfhm::players::%{_player}%::penalty} to ceil({nfhm::players::%{_player}%::penalty} / 2)
+						message " &7● &a到達特典&r：徒歩ペナルティが2分の1に減りました。" to player({_player})
+					else:																										# 25%の確率で徒歩ペナルティ3/4
+						set {nfhm::players::%{_player}%::penalty} to ceil({nfhm::players::%{_player}%::penalty} / 4 * 3)
+						message " &7● &a到達特典&r：徒歩ペナルティが4分の3に減りました。" to player({_player})
+					if {nfhm::arrive::shift} = true:												# もし，Shiftキーを押したままチェックインした場合，
+						teleport {_player} to {nfhStartLoc}										# そのプレイヤーを初期地点に送還
+					delete {nfhm::arrive::*}																# 到達されたチェックポイント情報を削除し，
+					delete {nfhm::cp::%{_id}%::*}														# 選出されたチェックポイント情報も削除。
+					
+				# ◆徒歩・乗りものペナルティ処理，ポーション効果消去
+				loop getNfhPlayers():																			# 参加プレイヤーごとに回す
+					set {_p} to player(loop-value)																	# プレイヤーオブジェクトを取得し，
+					if {_p} is riding a minecart:																		# トロッコ（＝公共交通）に乗っているとき，
+						remove 0.5 from {nfhm::players::%{_p}'s uuid%::penalty}				# 徒歩ペナルティを-0.5し，
+						if {nfhm::players::%{_p}'s uuid%::penalty} is less than 0:		# 0未満になったら，
+							set {nfhm::players::%{_p}'s uuid%::penalty} to 0						# 0にする。
+					else if {_p} is riding:																					# トロッコ（＝公共交通）以外に乗っているとき，
+						force {_p} dismount from his vehicles													# 強制下車
+					else:																																										# 徒歩のとき，前回記録地点と現在値の距離を測定し，
+						set {_pDist} to the distance between {_p}'s location and {nfhm::players::%{_p}'s uuid%::location}
+						if {_pDist} > 0:																																			# それが0以上だったならば，
+							add 1 to {nfhm::players::%{_p}'s uuid%::penalty}																		# 徒歩ペナルティを+1し，
+							if {nfhm::players::%{_p}'s uuid%::penalty} is more than {@walk penalty margin} - 1:	# ペナルティカウントが所定値以上で，
+								if mod({nfhm::players::%{_p}'s uuid%::penalty}, 5) is between 0 and 0.9999:				# 5の倍数（つまり1秒）だったら
+									remove 1 from {nfhm::players::%{_p}'s uuid%::points}														# 獲得ポイントを-1する。
+					set {_barPer} to 100 - floor({nfhm::players::%{_p}'s uuid%::penalty} / {@walk penalty margin} * 100)
+					set bar progress of {nfhm::bar::%{_p}'s uuid%} to {_barPer}																					# 割合を計算して,
+					set {_penaltySec} to ceil(({@walk penalty margin} - {nfhm::players::%{_p}'s uuid%::penalty}) / 5)		# ペナルティ残量を秒数換算し，
+					if {_barPer} > 0:																																										# {_barPer}が0以上なら，
+						set bar color of {nfhm::bar::%{_p}'s uuid%} to green																							# ボスバーの色は緑にする。
+						set bar title of {nfhm::bar::%{_p}'s uuid%} to "徒歩可能時間（%{_penaltySec}%秒）"									# ボスバーのタイトルを変更		
+					else:																																																# {_barPer}が0未満なら，
+						set bar color of {nfhm::bar::%{_p}'s uuid%} to red																								# ボスバーの色は赤にする。
+						set bar title of {nfhm::bar::%{_p}'s uuid%} to "徒歩ペナルティ中（&4%{_penaltySec}%&r秒）"					# ボスバーのタイトルを変更		
+					clear all the potion effects of {_p}															# ポーション効果を消して，
+					set {nfhm::players::%{_p}'s uuid%::location} to {_p}'s location		# 現在値を記録する。
+				# ◆チェックポイントカウントダウン＋見逃し消失処理
+				loop getSelectedCPs():	# 選定CPごとに回す。
+					set {_cp} to loop-value																		# CPのIDを取得し，
+					remove 1 from {nfhm::cp::%{_cp}%::count}									# その残り処理ターン数を1減らす。
+					if {nfhm::cp::%{_cp}%::count} isn't more than 0:					# もしカウントが0ならば，メッセージを出して
+						broadcast "%{@nfh display name}% CP &a%{nfh::%{_cp}%::name}%&r は &c時間切れ&rになった！"
+						set {_maxDist} to 0																			# 消失CPから最も遠いプレイヤーとの距離が代入
+						set {_farPlayer} to ""																	# 消失CPから最も遠いプレイヤーが代入
+						loop getNfhPlayers():																		# 参加プレイヤーごとに回す
+							set {_p} to player(loop-value-2)											# プレイヤーのオブジェクトを取得し，それとの距離を得て，
+							set {_dist} to the distance between {_p}'s location and {nfh::%{_cp}%::loc}
+							if {_maxDist} is less than {_dist}:										# 現在記録されてい最長距離を更新するならば，
+								set {_maxDist} to {_dist}														# 距離を更新し，
+								set {_farPlayer} to loop-value-2										# 遠いところにいるプレイヤーのUUIDも更新。
+						remove {nfhm::cp::%{_cp}%::point} from {nfhm::players::%{_farPlayer}%::points}		# 対象者の点数を減らして告知。
+						broadcast " このCPから最も遠いのは &d%player({_farPlayer})'s display name%&r は &c%{nfhm::cp::%{_cp}%::point}%&rpts. 減点された！"
+						delete {nfhm::cp::%{_cp}%::*}														# そのCPを選定から消し，
+						drawCheckPoint({nfh::%{_cp}%::loc},{_cp},false)					# 新しいチェックポイントを1つ選出。
+				# ◆（５分後限定）１回目のFP追加処理
+				if loop-counter = 1500:
+					drawCheckPoint({nfhStartLoc}, "", true)
+				# ◆タブリストの名前変更処理・スコアボード処理
+				loop getNfhPlayers():																			# 参加プレイヤーごとに回す
+					set {_p} to player(loop-value)													# プレイヤーオブジェクトを取得し，タブリストの点数表示を更新。
+					set {_playerPoints} to {nfhm::players::%loop-value%::points}
+					set {_p}'s tab list name to "&6(%{_playerPoints}%pts.)&r %{_p}'s display name%"
+					clear {_p}'s scoreboard																	# 古いスコアボードを消して，新たなスコアボードの名前を決めて，
+					set title of {_p}'s scoreboard to "&8_______________&9&lVVESTER&r&8_______________"
+					# ◇ 至近RP表示
+					set {_rpText} to getClosestRpText({_p})
+					set line 1 of {_p}'s scoreboard to "%{_rpText}%"
+					# ◇ 全CP・FP表示
+					set {_c} to 1
+					loop getSelectedCPs():																				# 選定CPごとに回す。
+						add 1 to {_c}																								# （loop-counter-2が上手く作動しないので，自前で+1している）
+						set {_cp} to loop-value-2																		# CPのIDと，
+						set {_name} to {nfh::%{_cp}%::name}													# 名前を取得し，
+						set {_name8} to the first 8 characters of {_name}						# 名前の頭8文字と，自身との距離と
+						set {_dist} to the distance between {_p}'s location and {nfh::%{_cp}%::loc}
+						set {_distCeil} to ceil({_dist})														# 距離は切り上げて，
+						set {_vector} to vector between {_p}'s location and {nfh::%{_cp}%::loc}		# ベクトルをもとめて，
+						set {_yaw} to the yaw of {_vector}													# 角度を計算して，
+						set {_yawText} to getYawToDirection({_yaw})									# それを16方位に変換して，
+						set {_point} to {nfhm::cp::%{_cp}%::point}									# 到達時ポイントを取得して，
+						set {_count} to {nfhm::cp::%{_cp}%::count}									# CPの残り時間を取得して，
+						set {_countPer20} to ceil({_count} / 900 * 20)							# それを20分率に変えて，
+						set {_graphicalCount} to getGraphicalCount({_countPer20})		# グラフ文字列を作り
+						set line {_c} of {_p}'s scoreboard to "%{_graphicalCount}% &a%{_name8}% &7(%{_point}%) &d%{_distCeil}%m %{_yawText}%"
+				# ◆勝敗チェック
+				set {_maxPts} to minusinfinity value
+				set {_maxPlayer} to ""
+				loop getNfhPlayers():																									# 参加プレイヤーごとに回す
+					set {_p} to player(loop-value)																			# プレイヤーオブジェクトを取得し，
+					if {nfhm::players::%{_p}'s uuid%::points} is more than {_maxPts}:		# 回されたプレイヤーが最高ポイントを超える場合，
+						set {_maxPts} to {nfhm::players::%{_p}'s uuid%::points}						# 最高ポイント記録を更新して，
+						set {_maxPlayer} to {_p}																					# そのプレイヤーを記録
+				if {_maxPts} > {@survival mode target score}:													# もし規定ポイントに到達していたら，ログ出して終わり
+					broadcast "%{@nfh display name}% ゲームの勝敗が決まりました。勝者は &d%{_p}'s display name%&r です！"
+					execute player command "/nfh stop"																	# インスタンスの強制停止コマンドを入力。
+				wait 4 ticks				# 0.2秒待機
+
+		else:																													# ゲームのステータスが変わったものの「ゲーム中」でなかった場合は，
+			execute player command "/nfh stop"													# インスタンスの強制停止コマンドを入力。
+		# 本処理（ゲーム中）
+		
+
+
+#【CP抽選関数】
+# @param [location] myLoc 抽選されたCPの点数をつける際の基準とする座標
+# @param [text] dodgedCpId 選定を除外するCPのID
+# @param [boolean] chooseFp trueならば，遠方CP（FP）を選定
+function drawCheckPoint(myLoc: location, dodgedCpId: text = "none", chooseFp: boolean = false):
+	# 本処理
+	set {_flag} to false																			# 選定成功フラグ
+	while {_flag} is false:																		# このフラグが立たない以上，以下を繰り返す。
+		if loop-counter is more than 1000:											# whileを1000回以上回している場合は，無限ループを回避するため，
+			execute console command "/nfh stop"										# インスタンスの強制停止コマンドを入力して，
+			exit																									# 終了。
+		set {_index::*} to the indexes of {nfh::*}							# CPを保存しているリストからインデックスのみ取得して，
+		set {_id} to a random element of {_index::*}						# そのなかから1つのIDを抜き出して，……⑴
+		if {_id} = {_dodgedCpIp}:																# ⑴が選定を除外するCPならば，
+			continue																							# このCP選定はあきらめる。																				
+		if {_chooseFp} = false:																	# 遠方チェックポイントを選ばないことになっているのに，
+			if {nfh::%{_id}%::far} = true:												# ⑴が遠方CPであるならば，
+				continue																						# このCP選定はあきらめる。
+		if {_chooseFp} = true:																	# 遠方チェックポイントを選ぶことになっているのに，
+			if {nfh::%{_id}%::far} = false:												# ⑴が通常のCPであるならば，
+				continue																						# このCP選定はあきらめる。
+		set {_cps::*} to the indexes of {nfhm::cp::*}						# 選定済みCPリストからインデックス（＝ID）のみ抜き出し，
+		if {_cps::*} doesn't contain {_id}:											# もし，すでに選定済みのCP一覧に，今回のCPが含まれていなかったら，
+			set {nfhm::cp::%{_id}%::count} to 900									# 選定済みCP一覧に，今回のCPも加えて，制限時間を180秒に設定し，
+			if {_chooseFp} = true:																# いやでも，それが遠方CPならば，
+				set {nfhm::cp::%{_id}%::count} to 1800							# 制限時間を360秒として，
+			set {_cpLoc} to {nfh::%{_id}%::loc}										# CPの座標を取得し，距離（ｍ）のx分の1+yを点数として，
+			set {_point} to ceil(the distance between {_cpLoc} and {_myLoc} / {@cp point slope}) + {@cp point intercept}
+			set {nfhm::cp::%{_id}%::point} to {_point}						# 点数も変数に保存して，
+			set {_flag} to true																		# 選定成功フラグをONにする。
+	if {_chooseFp} = false:																		# CP選定時の全体メッセージ
+		broadcast "%{@nfh display name}% CP &a%{nfh::%{_id}%::name}% &7(%{_point}%pts. ) &rが選定された！"
+	else:																											# FP選定時の全体メッセージ
+		broadcast "%{@nfh display name}% FP &a%{nfh::%{_id}%::name}% &7(%{_point}%pts. ) &rが選定された！"
+	broadcast " &7● &r位置概要&7: &9%{nfh::%{_id}%::desc}%"		# 位置概要メッセージを流す
+
+
+#【現在選定されているCPのリストを返す関数】{nfhr::%{_id}%::name}
+# ゲームに参加しているプレイヤーのUUIDをリストとして返す。
+function getSelectedCPs() :: objects:
+	set {_cps::*} to the indexes of {nfhm::cp::*}				# 選定されているCPのリストからインデックスのみ取得し，
+	return {_cps::*}																		# 返す
+
+
+#【自身の位置から最も近いRPを返す】
+# @param {player} player プレイヤーのオブジェクト。プレイヤーのいる場所から最も近いRPを返す。
+function getClosestRpText(player: player) :: text:
+	set {_nearRpDistance} to infinity value																									# 最も近いRPまでの距離
+	set {_nearRpId} to "none"																																# 最も近いRPのID{nfhr::%{_id}%::name}
+	set {_index::*} to the indexes of {nfhr::*}																							# RPリストのインデックスだけ入手
+	loop {_index::*}:
+		set {_dist} to distance between {_player}'s location and {nfhr::%loop-value%::loc}		# 探索対象のRPと自身の場所との距離を求めて，
+		if {_dist} < {_nearRpDistance}:																												# 今まで探索された中でもっとも最短ならば，
+			set {_nearRpDistance} to {_dist}																										# 最短距離と，
+			set {_nearRpId} to loop-value																												# 最短RPのIDを更新。
+	set {_name} to {nfhr::%{_nearRpId}%::name}																							# 名前を取得し，
+	set {_name8} to the first 8 characters of {_name}																				# 名前の頭8文字と，
+	set {_distCeil} to ceil({_dist})																												# 距離は切り上げて，
+	set {_vector} to vector between {_player}'s location and {nfhr::%{_nearRpId}%::loc}			# ベクトルをもとめて，
+	set {_yaw} to the yaw of {_vector}																											# 角度を計算して，
+	set {_yawText} to getYawToDirection({_yaw})																							# それを16方位に変換して，
+	return "（最寄りＲＰ） &b%{_name8}% &d%{_distCeil}%m %{_yawText}%"												# テキストを返す
+
+
+#【参加プレイヤーのリストを返す関数】
+# CPのUUIDをリストとして返す。
+function getNfhPlayers() :: objects:
+	set {_p::*} to the indexes of {nfhm::players::*}		# 参加プレイヤーリストからインデックスのみ取得し，
+	return {_p::*}																			# 返す
+
+
+#【角度を16方位で返す関数】
+function getYawToDirection(yaw: number) :: text:
+	set {_yawPlus} to {_yaw} + 11.25										# このあとの条件分岐がやりやすいように，ヨーに11.25をたす
+	set {_result} to "南"																	# ここに返り値（16方位を漢字で）が返される
+	if {_yawPlus} is between 0 and 22.49:
+		set {_result} to "南"
+	else if {_yawPlus} is between 22.5 and 44.99:
+		set {_result} to "南南西"
+	else if {_yawPlus} is between 45 and 67.49:
+		set {_result} to "南西"
+	else if {_yawPlus} is between 67.5 and 89.99:
+		set {_result} to "西南西"
+	else if {_yawPlus} is between 90 and 112.49:
+		set {_result} to "西"
+	else if {_yawPlus} is between 112.5 and 134.99:
+		set {_result} to "西北西"
+	else if {_yawPlus} is between 135 and 157.49:
+		set {_result} to "北西"
+	else if {_yawPlus} is between 157.5 and 179.99:
+		set {_result} to "北北西"
+	else if {_yawPlus} is between 180 and 202.49:
+		set {_result} to "北"
+	else if {_yawPlus} is between 202.5 and 224.99:
+		set {_result} to "北北東"
+	else if {_yawPlus} is between 225 and 247.49:
+		set {_result} to "北東"
+	else if {_yawPlus} is between 247.5 and 269.99:
+		set {_result} to "東北東"
+	else if {_yawPlus} is between 270 and 292.49:
+		set {_result} to "東"
+	else if {_yawPlus} is between 292.5 and 314.99:
+		set {_result} to "東南東"
+	else if {_yawPlus} is between 315 and 337.49:
+		set {_result} to "南東"
+	else if {_yawPlus} is between 337.5 and 360:
+		set {_result} to "南南東"
+	return {_result}																		# 返す
+
+
+#【カウントをグラフに変える関数】
+function getGraphicalCount(count: number) :: text:
+	set {_result} to ""						# ここに返り値（グラフィカルなカウント）が返される
+	if {_count} > 20:							# カウントが20以上ならば，紫色のグラフをつくる
+		set {_count20} to {_count} - 20
+		set {_purple} to "|" repeated {_count20} times if {_count20} > 0 else ""
+		set {_green} to "|" repeated 20-{_count20} times if {_count20} < 20 else ""
+		set {_result} to "&d%{_purple}%&2%{_green}%&r"
+	else if {_count} > 4:					# カウントが20未満4以上ならば，緑色のグラフをつくる
+		set {_green} to "|" repeated {_count} times if {_count} > 0 else ""
+		set {_grey} to "|" repeated 20-{_count} times if {_count} < 20 else ""
+		set {_result} to "&2%{_green}%&8%{_grey}%&r"
+	else:													# カウントが4未満ならば，赤色のグラフをつくる
+		set {_red} to "|" repeated {_count} times if {_count} > 0 else ""
+		set {_grey} to "|" repeated 20-{_count} times if {_count} < 20 else ""
+		set {_result} to "&4%{_red}%&8%{_grey}%&r"
+	return {_result}
+
+
+#【インスタンスの削除】
+# 
+on left click on a sign:
+	# 条件チェック
+	the line 1 is "&c&l[nfh:end]"					# サバイバルモードの終了（停止）看板であること
+	# 本処理
+	execute player command "/nfh stop"	# インスタンスの強制停止コマンドを入力
+	# このあとの処理は【コマンド】に任せる
+
+
+#【ゲーム時は夜が，即時，朝になる】
+# 
+at 18:30 in "world":
+	# 条件チェック
+	{nfhm::*} exists										# ゲームインスタンス稼働時
+	# 本処理
+	set time of world "world" to 6:00		# すぐ6時にする
+
+
+#【コマンド】
+#
+command /nfh <text>[ <text>]:
+	trigger:
+		# 第1引数がlist→チェックポイント一覧を表示する
+		if arg-1 is "list":
+			# 条件チェック
+			the player is an operator			# OP権限者であること
+			# 本処理
+			set {_index::*} to the indexes of {nfh::*}																# CPを保存しているリストからインデックスのみ取得
+			set {_indexSize} to the size of {_index::*}																# インデックスの数を取得
+			set {_pageSize} to ceil({_indexSize} / 15)																# リストのページ枚数を計算
+			set {_page} to min({_pageSize}, max(1, floor(arg-2 parsed as number)))		# 第2引数からユーザーが表示させたいページを取得。引数が空のときは勝手に0が入る。また最大ページ枚数を超えない。
+			message "%{@nfh display name}% 登録済みのチェックポイント&7(%{_page}%/%{_pageSize}%)" to the player
+			# リストをループで回す
+			loop {_index::*}:
+				if loop-counter isn't between (({_page}-1)*15+1) and ({_page}*15):	# 表示しようとするCPの序列がページ範囲外の場合は表示を飛ばす
+					continue
+				set {_m::1} to a new text component from " &7● "
+				set {_m::2} to a new text component from "&a%{nfh::%loop-value%::name}%"
+				set click event of {_m::2} to a new click event to run command "/nfh jump %loop-value%"
+				set hover event of {_m::2} to a new hover event showing "位置説明: &9%{nfh::%loop-value%::desc}%&r%nl%クリックすると現地にワープできます"
+				set {_m::3} to a new text component from " &7(ID:%loop-value%)"
+				set {_l} to merge components {_m::*}
+				send component {_l} to the player
+				delete {_m::*}
+				#message "%loop-counter% %loop-value%" to the player
+		# 第1引数がrlist→回復ポイント一覧を表示する
+		if arg-1 is "rlist":
+			# 条件チェック
+			the player is an operator			# OP権限者であること
+			# 本処理
+			set {_index::*} to the indexes of {nfhr::*}																# RPを保存しているリストからインデックスのみ取得
+			set {_indexSize} to the size of {_index::*}																# インデックスの数を取得
+			set {_pageSize} to ceil({_indexSize} / 15)																# リストのページ枚数を計算
+			set {_page} to min({_pageSize}, max(1, floor(arg-2 parsed as number)))		# 第2引数からユーザーが表示させたいページを取得。引数が空のときは勝手に0が入る。また最大ページ枚数を超えない。
+			message "%{@nfh display name}% 登録済みの回復ポイント&7(%{_page}%/%{_pageSize}%)" to the player
+			# リストをループで回す
+			loop {_index::*}:
+				if loop-counter isn't between (({_page}-1)*15+1) and ({_page}*15):	# 表示しようとするCPの序列がページ範囲外の場合は表示を飛ばす
+					continue
+				set {_m::1} to a new text component from " &7● "
+				set {_m::2} to a new text component from "&a%{nfhr::%loop-value%::name}%"
+				set click event of {_m::2} to a new click event to run command "/nfh jump %loop-value%"
+				set hover event of {_m::2} to a new hover event showing "位置説明: &9%{nfhr::%loop-value%::desc}%&r%nl%クリックすると現地にワープできます"
+				set {_m::3} to a new text component from " &7(ID:%loop-value%)"
+				set {_l} to merge components {_m::*}
+				send component {_l} to the player
+				delete {_m::*}
+				#message "%loop-counter% %loop-value%" to the player
+		# 第1引数がjump→指定場所へワープする
+		else if arg-1 is "jump":
+			# 条件チェック
+			the player is an operator			# OP権限者であること
+			# 本処理
+			if {nfh::%arg-2%::*} doesn't exist:				# CPリストに指定IDのインデックスがなかったら，
+				if {nfhr::%arg-2%::*} doesn't exist:		# RPリストに指定IDのインデックスがなかったら処理中止
+					message "%{@nfh display name}% &4指定IDのチェックポイントは存在しません。" to the player
+					stop
+				teleport the player to {nfhr::%arg-2%::loc}
+			teleport the player to {nfh::%arg-2%::loc}
+		# 第1引数がdelete→CPリストから該当IDのデータを消す
+		else if arg-1 is "delete":
+			# 条件チェック
+			the player is an operator			# OP権限者であること
+			# 本処理
+			if {nfh::%arg-2%::*} doesn't exist:				# CPリストに指定IDのインデックスがなかったら，
+				if {nfhr::%arg-2%::*} doesn't exist:		# RPリストにも指定IDのインデックスがなかったら，下のメッセージを流して
+					message "%{@nfh display name}% &4指定IDのチェックポイントは存在しません。" to the player
+					stop																	# 処理おわり
+				message "%{@nfh display name}% RP &b%{nfhr::%arg-2%::name}% &7(ID:%arg-2%) &rを削除しました。" to the player
+				delete {nfhr::%arg-2%::*}
+				stop
+			message "%{@nfh display name}% CP &a%{nfh::%arg-2%::name}% &7(ID:%arg-2%) &rを削除しました。" to the player
+			delete {nfh::%arg-2%::*}
+			stop
+		# 第1引数がinfo→NFHの基本情報を表示
+		else if arg-1 is "info":
+			# 本処理
+			message "%{@nfh display name}% NFH機能の基本情報は次の通り。" to the player
+			set {_index::*} to the indexes of {nfh::*}																# CPを保存しているリストからインデックスのみ取得
+			set {_indexSize} to the size of {_index::*}																# インデックスの数を取得
+			message " &7● &r登録CP数&7: &9%{_indexSize}%" to the player
+		# 第1引数がstop→NFHインスタンスの終了処理
+		else if arg-1 is "stop":
+			# 本処理
+			delete {nfhm::*}
+			broadcast "%{@nfh display name}% &4NFHインスタンスを停止しました。"
+			clear scoreboards of all players
+			loop all players:
+				set the loop-value's tab list name to loop-value's nick name		# タブリストの名前表示を変更し，
+				delete boss bar with id "nfh_%loop-value's uuid%"								# ボスバーを消し，
+				if the loop-value's gamemode is adventure:											# もし，ゲームモードがアドベンチャーのままだったら，
+					set the loop-value's gamemode to survival											# サバイバルモードに戻してあげて，
+					teleport the loop-value to {nfhStartLoc}											# ゲーム開始地点に戻してあげる
+			delete {nfhStartLoc}
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,12 @@
+# カスタムモデル呼び出し
+
+command /cmd <number> [<number=1>]:
+	trigger:
+		if player don't have permission "nicotetsu.op":
+			if arg-1 isn't between 3000 and 3999:
+				message "[official] その番号のカスタムモデルは発行できません。"
+				stop
+		loop arg-2 times:
+			give a paper with custom model data arg-1 to the player
+
+

@@ -1,0 +1,1532 @@
+
+
+# ◇■◇別名一覧◇■◇
+# （guild.skも更新せぇよ）
+aliases:
+	#各種のテラコッタ
+	any terracotta = terracotta , white_terracotta , orange_terracotta , magenta_terracotta , light_blue_terracotta , yellow_terracotta , lime_terracotta , pink_terracotta , gray_terracotta , light_gray_terracotta , cyan_terracotta , purple_terracotta , blue_terracotta , brown_terracotta , green_terracotta , red_terracotta , black_terracotta
+	# 各種のコンクリート
+	any concrete = white_concrete , orange_concrete , magenta_concrete , light_blue_concrete , yellow_concrete , lime_concrete , pink_concrete , gray_concrete , light_gray_concrete , cyan_concrete , purple_concrete , blue_concrete , brown_concrete , green_concrete , red_concrete , black_concrete
+	# 各種の葉
+	leaves = oak_leaves , spruce_leaves , birch_leaves , jungle_leaves , acacia_leaves , dark_oak_leaves , azalea_leaves , flowering_azalea_leaves , mangrove_leaves , cherry_leaves , nether_wart_block , warped_wart_block
+	#各種の原木、幹
+	any log = oak_log , spruce_log , birch_log , jungle_log , acacia_log , dark_oak_log , crimson_stem , warped_stem , mangrove_log , cherry_log
+	# 土工のシャベル特効ブロック 粘土、粗い土、耕地、草ブロック・土、砂利、菌糸、ポドゾル、赤い砂、砂、ソウルサンド、草の道、雪ブロック
+	digdig     = clay, coarse dirt, farmland, grass block, dirt, gravel, mycelium, podzol, red sand, sand, soul sand, dirt path, snow block
+	# 土工のつるはし特効ブロック 赤い砂岩，砂岩
+	digdigpick = red sandstone, sandstone
+	# 坑夫の特効ブロック 石、丸石、安山岩、閃緑岩、花崗岩、黒曜石、ネザーラック、深層岩，方解石，ブラックストーン
+	minemine   = stone, cobblestone, andesite, diorite, granite, obsidian, magma block, netherrack, deepslate, cobbled deepslate, calcite, blackstone
+	# 左官の特効ブロック 各種のテラコッタ，各種のコンクリート
+	plastplast = any terracotta, any concrete
+	# 樵夫の特効ブロック 各種の原木
+	cutcut = any log, stripped crimson stem, stripped warped stem
+	# 置換可能ブロックの一覧
+	# （かすみん推奨）snowを追加した方がいい
+	replacable blocks = air, cave air, water, lava, dead bush, short grass, tall grass, fern, large fern , kelp plant, torch , wall torch, snow
+	# 街路樹作成に関わる苗木の一覧
+	source of street trees = oak sapling, spruce sapling, birch sapling, jungle sapling, acacia sapling, dark oak sapling, mangrove propagule, cherry sapling
+
+
+
+# ◇■◇定数◇■◇
+# ・備忘：messageなどにoptionsのデータを記載するとき，文字列は%～%ではさむ，数値は%～%ではさまない。
+options:
+	# ヘッダの名前，GUIの名前
+	dev display name: "&7[&aDev.&7]&r"
+	dev inventory name: "&2&l建築支援メニュー"
+	# 機能を使用できる高度の限界
+	minimum altitude: 50
+	# 始点を示すパーティクルの大きさと色
+	start location dust size: 0.7
+	start location dust color: rgb(255, 0, 255)
+	# キャンバス範囲を示す辺のパーティクルの大きさと色
+	canvas dust size: 0.7
+	canvas dust color: rgb(255, 255, 0)
+	# キャンバス範囲を示す壁のパーティクルの大きさと色
+	canvas wall size: 0.7
+	canvas wall color: rgb(127, 127, 127)
+	# xyzの各軸を示すパーティクルの色
+	x axis dust color: rgb(255, 0, 0)
+	y axis dust color: rgb(0, 255, 0)
+	z axis dust color: rgb(0, 0, 255)
+	# 遠隔でエンダーチェストを開くときのコスト（利権値）
+	# （補足）1回開くあたりのコストを指定。必ず整数で指定。
+	cost of enderchest: 1000
+	# 1ティックあたりの塗りつぶし座標を計算する量を指定。
+	# 座標計算時，サーバーがえらくカクつくと思ったら数値を下げる
+	calc limit per tick: 50
+	# 既存のブロックを壊すときのコスト（利権値）
+	# （補足）1ブロックの処理あたりに減らされる利権値を指定する
+	# 　小数点以下も指定可能。「2.85」と指定すると，1行為につき利権値を必ず2奪い，さらに85%の確率で1奪う。
+	# （計算の一助）キャンバス（48*48*48）全てをあわせると110592ブロック，利権値は最大100000点
+	cost of breaking: 2.5
+	# 壊そうとしている既存のブロックが，自身の職業の利権ブロックであった場合の，割引率。0～1で指定。
+	# （補足）例えば自身が土工として，当機能を使って土を壊す場合，「cost of breaking」が15，割引率が0.1（＝10％）ならば，
+	# 　土ブロック1個が壊される場合の減らされる利権値は1.5まで減免される。
+	# 　以下のときに減免がかかる。
+	# 　・置換機能で自身の職業と対応するブロックを空気に置き換える場合
+	# 　・街路樹を生成する場合の，樵夫
+	job block discount rate: 0.1
+	# 水で満たすときと水を抜くときのそれぞれのコスト。小数点以下も指定可能。
+	# （補足）1ブロックの処理あたりに減らされる利権値を指定する
+	cost of fill water: 5
+	cost of drain water: 2
+	# 街路樹生成時の，葉減衰率を，0～1で指定
+	# （補足）0で直方体の木が完成，1だと葉が完全にハゲる
+	# 　街路樹生成時は，まず直方体の葉を作成し，下以外の5の面に接するブロックを，指定レートで減衰させている
+	# 　このため，北西，北東，南西，南東の各辺に接するブロックは，指定レートで2回抽選される。
+	# 　また，上北西，上北東，上南西，上南東の各頂点に接するブロックは，指定レートで3回抽選される。
+	# 　なお，頂上中央の葉だけは減衰しない。
+	leaves atenuation rate: 0.4
+	# 街路樹生成時のコスト（利権値）
+	# （補足）街路樹1つ生成するときにかかる利権値を指定する。小数点以下も指定していいけどどうせ切り上げられる
+	cost of generate street tree: 1000
+	# 等高線掘削時のコスト（利権値）
+	# （補足）1ブロックの処理あたりに減らされる利権値を指定する。小数点以下も指定可能。
+	# 　なおこれは，土工および坑夫の限定技能であり，利権値の割引はない。
+	cost of contour: 0.5
+
+
+
+
+
+
+################################################################################
+# コマンドの動作・GUI
+################################################################################
+
+# 【コマンド】建築支援機能コマンド
+# ・機能の呼び出しや中止，
+# （補足）基本としてGUIで動かしてもらうことを想定しているため，コマンドは副次的なものとする
+command /development [<text="menu"> [<text=""> [<text="">]]]:
+	aliases: /d, /dev
+	trigger:
+		# 条件チェック（コマンドを通常ディメンションで起動していること）
+		the player's world is "world"
+		# 本処理
+		set {_player} to the player
+		set {_pid} to the player's uuid
+		# 第1引数をローカル変数に代入。
+		set {_arg} to arg-1
+		# 第1引数が"panel"か"menu"⇒コントロールパネルを表示
+		if {_arg} is "menu" or "panel":
+			showDevelopmentMenu(player)
+			exit
+		# 第1引数が"false"⇒支援モード終了
+		# （正確には，すでに動いているであろうインスタンスにモード停止を検知させるべく使用中フラグを降ろす）
+		else if {_arg} is "false" or "off" or "stop":
+			stopDevelopmentInstance(player)
+			exit
+		# 第1引数が"true"⇒支援モード起動
+		else if {_arg} is "true" or "on" or "run":
+			runDevelopmentModeInstance(player)
+			exit
+		# 第1引数が"enderchest"か"ec"⇒自身のエンダーチェストを表示
+		if {_arg} is "enderchest" or "ec":
+			openEnderChestRemotely(player)
+			exit
+		# 第1引数が"canvas"⇒自身のエンダーチェストを表示
+		if {_arg} is "canvas" or "c":
+			# 第2引数が"set"⇒キャンバス座標の設定
+			if arg-2 is "set" or "s":
+				setLocationFrom({_player})
+				exit
+			# 第2引数が"adjust"⇒キャンバス範囲の微調整
+			else if arg-2 is "adjust" or "a":
+				adjustCanvas({_player}, arg-3)
+				exit
+			# 第2引数が"clear"⇒キャンバス指定の消去（関数起動）
+			else if arg-2 is "clear" or "cancel" or "c":
+				deleteCanvas(player)
+				exit
+		# 第1引数が"replace"⇒置換
+		else if {_arg} is "replace":
+			if {dev::canvas::%{_pid}%::end} doesn't exist:
+				message "%{@dev display name}% &4&lキャンバスが設定されていません。" to {_player}
+				exit
+			set {_arg2} to arg-2 parsed as number
+			if {_arg2} doesn't exist:
+				set {_arg2} to 100
+			devReplace(the player, {dev::canvas::%{_pid}%::start}, {dev::canvas::%{_pid}%::end}, {_arg2})
+			exit
+		# 第1引数が"water"⇒
+		else if {_arg} is "water":
+			# 第2引数が"fill"⇒塗りつぶし座標群に水を満たす
+			if arg-2 is "fill":
+				setWater(player, true)
+				exit
+			# 第2引数が"drain"⇒塗りつぶし座標群から水を抜く
+			else if arg-2 is "drain":
+				setWater(player, false)
+				exit
+		# 第1引数が"structure"⇒
+		else if {_arg} is "structure":
+			# 第2引数が"copy"⇒キャンバスをクリップボードにコピー
+			if arg-2 is "copy":
+				copyCanvas(player)
+			# 第2引数が"paste"⇒クリップボードに保存しておいたストラクチャーを貼り付け
+			else if arg-2 is "paste":
+				pasteStructure(player, player's location)
+		# 第1引数が"fill"など⇒塗りつぶし範囲関連の設定
+		else if {_arg} is "fill" or "f":
+			# 第2引数が"cancel"など⇒塗りつぶし座標群の消去（関数起動）
+			if arg-2 is "cancel" or "c":
+				deleteCFillCubes(player)
+				exit
+
+
+
+# 【イベント】インベントリ内で的ブロックをクリックすると，建築支援モードのGUIが出現
+on inventory click at a target block:
+	the click type is right mouse button
+	cancel the event
+	close the player's inventory
+	showDevelopmentMenu(player)
+	stop
+
+
+
+# 【関数】建築支援モードのGUIを表示する
+# （引数）プレイヤー
+# （説明）プレイヤーの置かれている状況に応じて，表示されるアイコンが変わる
+function showDevelopmentMenu(player: player):
+	set {_pid} to {_player}'s uuid
+	set {_guiName} to {@dev inventory name}
+	# 建築支援モードを起動していない場合
+	if {dev::inUse::%{_pid}%} = false:
+		set {_gui} to chest inventory with 1 rows named {_guiName}
+		# まず全スロットに無アイコンを割り当てる
+		loop integers from 0 to 8:
+			set slot loop-number of {_gui} to ender pearl with custom model data 1000 named " "
+		# 個別アイコン
+		set slot 0 of {_gui} to ender pearl with custom model data 1001 named "&l建築支援モードの起動" with lore "建築支援のインスタンスを開始します。" and "現在は起動していません。"
+		open {_gui} for {_player}
+		exit
+	# 建築支援モードを起動している場合
+	else:
+		set {_gui} to chest inventory with 3 rows named {_guiName}
+		# まず全スロットに無アイコンを割り当てる
+		loop integers from 0 to 26:
+			set slot loop-number of {_gui} to ender pearl with custom model data 1000 named " "
+		# 個別アイコン
+		set slot 0 of {_gui} to ender pearl with custom model data 1002 named "&l建築支援モードの終了" with lore "建築支援のインスタンスを終了します。" and "現在は起動しています。"
+		set slot 2 of {_gui} to ender pearl with custom model data 1006 named "&lキャンバス座標の設定" with lore "現在いる場所をキャンバス範囲の始点・終点とします。"
+		set slot 6 of {_gui} to ender pearl with custom model data 1004 named "&lキャンバスのクリア" with lore "設定したキャンバス範囲をクリアします。"
+		set slot 7 of {_gui} to ender pearl with custom model data 1005 named "&l塗りつぶし座標のクリア" with lore "設定した塗りつぶし座標をクリアします。"
+		set slot 8 of {_gui} to ender pearl with custom model data 1003 named "&lエンダーチェストを開く" with lore "自身のエンダーチェストを開きます。" and "ただし所定の利権値が消費されます。"
+		set slot 9 of {_gui} to ender pearl with custom model data 1007 named "&l水で満たす" with lore "設定した塗りつぶし座標すべてを水ブロックにします。" and "ただし所定の利権値が消費されます。"
+		set slot 10 of {_gui} to ender pearl with custom model data 1008 named "&l水を抜く" with lore "設定した塗りつぶし座標すべてを空気ブロックにします。" and "ただし所定の利権値が消費されます。"
+		set slot 11 of {_gui} to ender pearl with custom model data 1009 named "&l置換" with lore "設定したキャンバス範囲内の特定ブロックを置き換えます。" and "ただし所定の利権値が消費されます。" and "● ターゲットされているブロックを検索します。" and "● ホットバーで選択されているブロックに置換します。"
+		set slot 12 of {_gui} to ender pearl with custom model data 1010 named "&l90パーセントの確率で置換" with lore "設定したキャンバス範囲内の特定ブロックを，90パーセントの確率で置き換えます。" and "ただし所定の利権値が消費されます。" and "● ターゲットされているブロックを検索します。" and "● ホットバーで選択されているブロックに置換します。"
+		set slot 13 of {_gui} to ender pearl with custom model data 1011 named "&l75パーセントの確率で置換" with lore "設定したキャンバス範囲内の特定ブロックを，75パーセントの確率で置き換えます。" and "ただし所定の利権値が消費されます。" and "● ターゲットされているブロックを検索します。" and "● ホットバーで選択されているブロックに置換します。"
+		set slot 14 of {_gui} to ender pearl with custom model data 1012 named "&l50パーセントの確率で置換" with lore "設定したキャンバス範囲内の特定ブロックを，50パーセントの確率で置き換えます。" and "ただし所定の利権値が消費されます。" and "● ターゲットされているブロックを検索します。" and "● ホットバーで選択されているブロックに置換します。"
+		set slot 15 of {_gui} to ender pearl with custom model data 1013 named "&l25パーセントの確率で置換" with lore "設定したキャンバス範囲内の特定ブロックを，25パーセントの確率で置き換えます。" and "ただし所定の利権値が消費されます。" and "● ターゲットされているブロックを検索します。" and "● ホットバーで選択されているブロックに置換します。"
+		set slot 16 of {_gui} to ender pearl with custom model data 1014 named "&l10パーセントの確率で置換" with lore "設定したキャンバス範囲内の特定ブロックを，10パーセントの確率で置き換えます。" and "ただし所定の利権値が消費されます。" and "● ターゲットされているブロックを検索します。" and "● ホットバーで選択されているブロックに置換します。"
+		set slot 18 of {_gui} to ender pearl with custom model data 1015 named "&l等高線掘削のヘルプ" with lore "設定したキャンバス範囲内で，Shiftを押しながら土や石などを掘った場合" and "同じ高さにある同じ種類のブロックをすべて削ります。" and "ただし所定の利権値が消費されます。" and "また，土工および坑夫の対応するブロックのみ作用します。" and "他職業は適用されません。"
+		set slot 19 of {_gui} to ender pearl with custom model data 1016 named "&l街路樹生成のヘルプ" with lore "Shiftを押しながら骨粉を苗木に撒くと，通常の木より小さな街路樹を生成します。" and "ただし所定の利権値が消費されます。"
+		open {_gui} for {_player}
+		exit
+
+
+on inventory click:
+	set {_player} to the player
+	the event-inventory's name = {@dev inventory name}
+	set {_name} to the event-slot's name
+	if {_name} contains "建築支援モードの起動":
+		cancel the event
+		play sound "ui.button.click" with volume 0.25 for {_player}
+		let {_player} execute the command "/development true"
+		showDevelopmentMenu({_player})
+		exit
+	else if {_name} contains "建築支援モードの終了":
+		cancel the event
+		play sound "ui.button.click" with volume 0.25 for {_player}
+		let {_player} execute the command "/development false"
+		showDevelopmentMenu({_player})
+		exit
+	else if {_name} contains "エンダーチェストを開く":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development enderchest"
+		exit
+	else if {_name} contains "キャンバス座標の設定":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development canvas set"
+		exit
+	else if {_name} contains "キャンバスのクリア":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development canvas clear"
+		exit
+	else if {_name} contains "塗りつぶし座標のクリア":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development fill clear"
+		exit
+	else if {_name} contains "水で満たす":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development water fill"
+		exit
+	else if {_name} contains "水を抜く":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development water drain"
+		exit
+	else if {_name} contains "置換":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development replace 100"
+		exit
+	else if {_name} contains "90パーセントの確率で置換":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development replace 90"
+		exit
+	else if {_name} contains "75パーセントの確率で置換":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development replace 75"
+		exit
+	else if {_name} contains "50パーセントの確率で置換":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development replace 50"
+		exit
+	else if {_name} contains "25パーセントの確率で置換":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development replace 25"
+		exit
+	else if {_name} contains "10パーセントの確率で置換":
+		cancel the event
+		close the player's inventory
+		let {_player} execute the command "/development replace 10"
+		exit
+	else if {_name} contains "等高線掘削のヘルプ":
+		cancel the event
+		exit
+	else if {_name} contains "街路樹生成のヘルプ":
+		cancel the event
+		exit
+	else if {_name} contains " ":
+		cancel the event
+		exit
+		
+
+		
+
+
+
+
+
+
+
+################################################################################
+# インスタンス
+################################################################################
+
+# 【関数】建築支援インスタンスの開始と範囲等描画
+# （引数）プレイヤー
+function runDevelopmentModeInstance(player: player):
+	# 本処理
+	# グローバル関数の，建築支援モード使用中フラグをOnにする
+	set {_pid} to {_player}'s uuid
+	set {dev::inUse::%{_pid}%} to true
+	# くり返し作業に入る前に，各種の定数はローカル変数に格納しておく
+	set {_cdc} to {@canvas dust color}
+	set {_sldc} to {@start location dust color}
+	set {_slds} to {@start location dust size}
+	set {_xadc} to {@x axis dust color}
+	set {_yadc} to {@y axis dust color}
+	set {_zadc} to {@z axis dust color}
+	set {_cds} to {@canvas dust size}
+	set {_cwc} to {@canvas wall color}
+	set {_cws} to {@canvas wall size}
+	# ここから0.5秒おきに周回
+	while {dev::inUse::%{_pid}%} is true:
+		# 使用中を示すメッセージ
+		send the action bar with text "§4§l《§6§l建築支援機能 使用中§4§l》" to {_player}
+		# もしキャンバスの終点が設定されていれば，編集可能範囲をパーティクルで表示
+		if {dev::canvas::%{_pid}%::end} exists:
+			set {_s} to {dev::canvas::%{_pid}%::start}
+			set {_e} to {dev::canvas::%{_pid}%::end}
+			showArea({_s},{_e},{_cdc},{_xadc},{_yadc},{_zadc},{_cds},0,false,{_cwc},{_cws})
+		# もしキャンバスの始点だけ設定されていれば，始点のブロックだけパーティクルで表示
+		else if {dev::canvas::%{_pid}%::start} exists:
+			set {_s} to {dev::canvas::%{_pid}%::start}
+			showArea({_s},{_s},{_sldc},{_sldc},{_sldc},{_sldc},{_slds},0,false,{_cwc},{_cws})
+		# もし塗りつぶし座標が設定されていれば，その座標群をパーティクルで表示
+		if {dev::fillCubes::%{_pid}%::*} exists:
+			loop {dev::fillCubes::%{_pid}%::*}:
+				#make 1 of block particle using dirt at loop-value
+				play soul fire flame on loop-value
+		wait 10 ticks
+	# インスタンス使用中フラグのoffを検知したら，このインスタンスを終わらせる。
+	deleteCanvas({_player})
+	deleteCFillCubes({_player})
+	send the action bar with text "" to {_player}
+
+
+
+# 【関数】建築支援インスタンスの停止
+# （引数）プレイヤー
+function stopDevelopmentInstance(player: player):
+	# 本処理
+	# グローバル関数の，建築支援モード使用中フラグをOFFにする
+	set {_pid} to {_player}'s uuid
+	set {dev::inUse::%{_pid}%} to false
+	# 上フラグがoffになると，インスタンスがそれを感知して，自己停止してくれる
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# パーティクル表示関連
+################################################################################
+
+# 【関数】範囲を表示する
+# （引数）表示範囲の始点，表示範囲の終点，デフォルトの表示色，X軸の表示色，Y軸の表示色，Z軸の表示色，パーティクルの大きさ，Y軸のある辺（北西が0，北東が1，…），XZ反転，壁の色，壁の大きさ
+function showArea(s: location, e: location, dColor: color, xColor: color, yColor: color, zColor: color, size: number, yPos: number, xzInverse: boolean, wColor: color, wSize: number):
+	# 最大値（整数），最小値（整数）を求める
+	set {_minX} to x-loc of {_s} - 0.5
+	set {_minY} to y-loc of {_s} - 0.5
+	set {_minZ} to z-loc of {_s} - 0.5
+	set {_maxX} to x-loc of {_e} + 0.5
+	set {_maxY} to y-loc of {_e} + 0.5
+	set {_maxZ} to z-loc of {_e} + 0.5
+	# 一旦，12辺全てに，デフォルトの色を割り当てる。
+	set {_color::bn} to {_dColor}
+	set {_color::bs} to {_dColor}
+	set {_color::an} to {_dColor}
+	set {_color::as} to {_dColor}
+	set {_color::nw} to {_dColor}
+	set {_color::ne} to {_dColor}
+	set {_color::sw} to {_dColor}
+	set {_color::se} to {_dColor}
+	set {_color::bw} to {_dColor}
+	set {_color::be} to {_dColor}
+	set {_color::aw} to {_dColor}
+	set {_color::ae} to {_dColor}
+	# Y軸のある辺の指定に応じて，上下（Y）方向に走る4辺のいずれか1つを，Y軸色に変更。
+	# またそれに応じて，東西（X）と南北（Z）方向に走る4辺のそれぞれ1つを，XおよびZ軸色に変更。
+	if {_yPos} = 0:
+		set {_color::nw} to {_yColor}
+		set {_color::bn} to {_xColor}
+		set {_color::bw} to {_zColor}
+	else if {_yPos} = 1:
+		set {_color::ne} to {_yColor}
+		set {_color::be} to {_xColor}
+		set {_color::bn} to {_zColor}
+	else if {_yPos} = 2:
+		set {_color::sw} to {_yColor}
+		set {_color::bs} to {_xColor}
+		set {_color::be} to {_zColor}
+	else if {_yPos} = 3:
+		set {_color::se} to {_yColor}
+		set {_color::bw} to {_xColor}
+		set {_color::bs} to {_zColor}
+	# 範囲を構成する直方体の12辺のうち，東西（X）方向に走る4辺を描画
+	loop decimals from ({_minX} + 0.1) to ({_maxX} - 0.1):
+		draw 1 of dust using dustOption({_color::bn}, {_size}) at location(loop-value,{_minY},{_minZ},world("world"))		# 下北の辺
+		draw 1 of dust using dustOption({_color::bs}, {_size}) at location(loop-value,{_minY},{_maxZ},world("world"))		# 下南の辺
+		draw 1 of dust using dustOption({_color::an}, {_size}) at location(loop-value,{_maxY},{_minZ},world("world"))		# 上北の辺
+		draw 1 of dust using dustOption({_color::as}, {_size}) at location(loop-value,{_maxY},{_maxZ},world("world"))		# 下南の辺
+	# 範囲を構成する直方体の12辺のうち，上下（Y）方向に走る4辺を描画
+	loop decimals from ({_minY} + 0.1) to ({_maxY} - 0.1):
+		draw 1 of dust using dustOption({_color::nw}, {_size}) at location({_minX},loop-value,{_minZ},world("world"))		# 北西の辺
+		draw 1 of dust using dustOption({_color::ne}, {_size}) at location({_minX},loop-value,{_maxZ},world("world"))		# 北東の辺
+		draw 1 of dust using dustOption({_color::sw}, {_size}) at location({_maxX},loop-value,{_minZ},world("world"))		# 南西の辺
+		draw 1 of dust using dustOption({_color::se}, {_size}) at location({_maxX},loop-value,{_maxZ},world("world"))		# 南東の辺
+	# 範囲を構成する直方体の12辺のうち，南北（Z）方向に走る4辺を描画
+	loop decimals from ({_minZ} + 0.1) to ({_maxZ} - 0.1):
+		draw 1 of dust using dustOption({_color::bw}, {_size}) at location({_minX},{_minY},loop-value,world("world"))		# 下西の辺
+		draw 1 of dust using dustOption({_color::be}, {_size}) at location({_minX},{_maxY},loop-value,world("world"))		# 下東の辺
+		draw 1 of dust using dustOption({_color::aw}, {_size}) at location({_maxX},{_minY},loop-value,world("world"))		# 上西の辺
+		draw 1 of dust using dustOption({_color::ae}, {_size}) at location({_maxX},{_maxY},loop-value,world("world"))		# 上東の辺
+	# 範囲を構成する6面のうち，
+	loop integers from {_minX}+1 to {_maxX}-1:
+		loop integers from {_minY}+1 to {_maxY}-1:
+			draw 1 of dust using dustOption({_wColor}, {_wSize}) at location(loop-value-1,loop-value-2,{_minZ},world("world"))		# 北面
+			draw 1 of dust using dustOption({_wColor}, {_wSize}) at location(loop-value-1,loop-value-2,{_maxZ},world("world"))		# 南面
+		loop integers from {_minZ}+1 to {_maxZ}-1:
+			draw 1 of dust using dustOption({_wColor}, {_wSize}) at location(loop-value-1,{_minY},loop-value-2,world("world"))		# 下面
+			draw 1 of dust using dustOption({_wColor}, {_wSize}) at location(loop-value-1,{_maxY},loop-value-2,world("world"))		# 上面
+	loop integers from {_minY}+1 to {_maxY}-1:
+		loop integers from {_minZ}+1 to {_maxZ}-1:
+			draw 1 of dust using dustOption({_wColor}, {_wSize}) at location({_minX},loop-value-1,loop-value-2,world("world"))		# 西面
+			draw 1 of dust using dustOption({_wColor}, {_wSize}) at location({_maxX},loop-value-1,loop-value-2,world("world"))		# 東面
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# 遠隔でエンダーチェストを開く
+################################################################################
+
+# 【関数】遠隔でエンダーチェストを開く
+# （引数）プレイヤー
+function openEnderChestRemotely(player: player):
+	# 条件チェック
+	set {_cost} to {@cost of enderchest}
+	if {_player}'s gamemode is survival:
+		if getRights({_player}) < {_cost}:
+			message "%{@dev display name}% &4&l利権値が不足しています。%{_cost}%" to {_player}
+			stop
+		addRights({_player}, (-1 * ceil({_cost})))				# 利権値を奪う
+	# 本処理
+	play sound "block.ender_chest.open" with volume 1.00 for {_player}
+	open {_player}'s ender chest to {_player}			# エンダーチェストを開く（独自の命名はできないらしい）
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# キャンバス範囲の選択
+################################################################################
+
+# 【イベント】的ブロックを持った状態で，（的以外の）ブロックを左クリックすると，キャンバス選択を行う
+on left click with a target block:
+	# 条件チェック
+	set {_player} to the player
+	set {_pid} to the player's uuid
+	set {_location} to the player's uuid
+	the event-world is "world"						# 通常ディメンションであること
+	the event-block isn't a target block	# クリックしたものが的ブロックではないこと
+	{dev::inUse::%{_pid}%} is true				# 支援モード使用中であること
+	# 本処理
+	# ブロックの設置をキャンセルする
+	cancel the event
+	# キャンバスの始点が指定されていない場合，左クリックされた座標を始点とする
+	if {dev::canvas::%{_pid}%::start} doesn't exist:
+		#setStartLocation(the event-player, the event-block's location)
+		setCanvasAnchor({_player}, {_location})
+		stop
+	# キャンバスの終点が指定されていない場合，左クリックされた座標を終点とする（的は没収される）
+	else if {dev::canvas::%{_pid}%::end} doesn't exist:
+		#setEndLocation(the event-player, the event-block's location, {dev::canvas::%{_pid}%::start}, true)
+		setCanvasVector()
+		stop
+	# キャンバスの始点も終点も指定されている場合，キャンバス指定はできない
+	else:
+		message "%{@dev display name}% &4&lキャンバス範囲はすでに指定されています。" to {_player}
+		stop
+
+
+
+# 【関数】キャンバスの原点を選択
+# （引数）対象プレイヤー，始点にしたい座標
+# （注意）高度が限界未満だと座標選択に失敗する。
+function setCanvasAnchor(player: player, location: location)
+	# 高度チェック。範囲外ならエラーメッセージを出して関数を停止
+	set {_minY} to {@minimum altitude}
+	if the altitude of {_location} is less than {_minY}:
+		message "%{@dev display name}% &4&l指定高度が低すぎます。§r当機能はY=%floor({_minY})%以上で利用できます。" to {_player}
+		stop
+	# プレイヤーのUUIDを得て，原点座標をセット
+	set {_pid} to {_player}'s uuid
+	set {dev::canvas::%{_pid}%::anchor} to {_location}
+
+
+# 【関数】編集可能範囲の始点を選択（いずれ消す）
+# （引数）対象プレイヤー，始点にしたい座標
+# （注意）高度が限界未満だと座標選択に失敗する。
+function setStartLocation(player: player, location: location):
+	# 高度チェック。範囲外ならエラーメッセージを出して関数を停止
+	set {_minY} to {@minimum altitude}
+	if the altitude of {_location} is less than {_minY}:
+		message "%{@dev display name}% &4&l指定高度が低すぎます。§r当機能はY=%{_minY}%以上で利用できます。" to {_player}
+		stop
+	# プレイヤーのUUIDを得て，始点座標をセット
+	set {_pid} to {_player}'s uuid
+	set {dev::canvas::%{_pid}%::start} to {_location}
+
+
+
+
+# 【関数】キャンバス範囲の終点を選択
+# （引数）対象プレイヤー，終点にしたい座標，始点の座標，的ブロックを没収する？
+# （注意）高度が限界未満だと範囲選択に失敗する。
+# （注意）XYZいずれかの辺の長さが48より大きいと，範囲選択に失敗する。
+function setEndLocation(player: player, e: location, s: location, doSteal: boolean):
+	# 各方向の最大・最小値を取得
+	set {_maxX} to max(x-loc of {_s}, x-loc of {_e})
+	set {_maxY} to max(y-loc of {_s}, y-loc of {_e})
+	set {_maxZ} to max(z-loc of {_s}, z-loc of {_e})
+	set {_minX} to min(x-loc of {_s}, x-loc of {_e})
+	set {_minY} to min(y-loc of {_s}, y-loc of {_e})
+	set {_minZ} to min(z-loc of {_s}, z-loc of {_e})
+	# 高度チェック。範囲外ならエラーメッセージを出して関数を停止
+	set {_minimum} to {@minimum altitude}
+	if {_minY} is less than {_minimum}:
+		message "%{@dev display name}% &4&l指定高度が低すぎます。§r当機能はY=%{_minY}%以上で利用できます。" to {_player}
+		stop
+	# 範囲指定が長すぎる場合には警告
+	set {_too long flag} to false
+	if difference between {_maxX} and {_minX} is bigger than 47:
+		message "%{@dev display name}% &4&lX方向の指定範囲が長すぎます。§r各辺48m以内に収めましょう。" to {_player}
+		set {_too long flag} to true
+	if difference between {_maxY} and {_minY} is bigger than 47:
+		message "%{@dev display name}% &4&lY方向の指定範囲が長すぎます。§r各辺48m以内に収めましょう。" to {_player}
+		set {_too long flag} to true
+	if difference between {_maxZ} and {_minZ} is bigger than 47:
+		message "%{@dev display name}% &4&lZ方向の指定範囲が長すぎます。§r各辺48m以内に収めましょう。" to {_player}
+		set {_too long flag} to true
+	if {_too long flag} is true:
+		stop
+	# プレイヤーのUUIDを得て，始点・終点座標を組み替えの上セット
+	set {_pid} to {_player}'s uuid
+	set {dev::canvas::%{_pid}%::start} to location({_minX},{_minY},{_minZ})
+	set {dev::canvas::%{_pid}%::end} to location({_maxX},{_maxY},{_maxZ})
+	# 的の没収フラグがtrueで，プレイヤーがサバイバルモードのときのみ，的ブロックを没収
+	if {_doSteal} is true:
+		remove 1 target block from {_player} if {_player}'s gamemode is survival
+
+
+# 【関数】プレイヤーのいる場所をキャンバスの始点もしくは終点とする
+# （引数）対象プレイヤー
+function setLocationFrom(player: player):
+	set {_pid} to {_player}'s uuid
+	# プレイヤー所在ブロックの中点を求める
+	set {_x} to floor(x-loc of {_player}'s position) + 0.5
+	set {_y} to floor(y-loc of {_player}'s position) + 0.5
+	set {_z} to floor(z-loc of {_player}'s position) + 0.5
+	set {_loc} to location({_x}, {_y}, {_z}, world of {_player})		
+	# 始点の設定がなければ始点座標を設定
+	if {dev::canvas::%{_pid}%::start} doesn't exist:
+		setStartLocation({_player}, {_loc})
+		exit
+	# 終点の設定がなければ終点座標を設定
+	else if {dev::canvas::%{_pid}%::end} doesn't exist:
+		setEndLocation({_player}, {_loc}, {dev::canvas::%{_pid}%::start}, true)
+	# 終点も設定してあれば座標を消す
+	else:
+		deleteCanvas({_player})
+
+
+
+# 【関数】キャンバスの微調整を行う
+# （引数）対象プレイヤー
+function adjustCanvas(player: player, score: text):
+	set {_pid} to {_player}'s uuid
+	# 条件チェック
+	if {dev::canvas::%{_pid}%::end} doesn't exist:
+		message "%{@dev display name}% &4&lキャンバスが設定されていません。" to {_player}
+		exit
+	# キャンバスの始点・終点を分解
+	set {_s} to {dev::canvas::%{_pid}%::start}
+	set {_e} to {dev::canvas::%{_pid}%::end}
+	set {_maxX} to max(x-loc of {_s}, x-loc of {_e})
+	set {_maxY} to max(y-loc of {_s}, y-loc of {_e})
+	set {_maxZ} to max(z-loc of {_s}, z-loc of {_e})
+	set {_minX} to min(x-loc of {_s}, x-loc of {_e})
+	set {_minY} to min(y-loc of {_s}, y-loc of {_e})
+	set {_minZ} to min(z-loc of {_s}, z-loc of {_e})
+	# 引数3の指示を分割して，それぞれの指示に合わせてキャンバス範囲の座標を計算し直す
+	set {_score::*} to split {_score} at ","
+	loop {_score::*}:
+		set {_note} to the loop-value
+		set {_first} to substring of {_note} from 1 to 1
+		set {_second} to substring of {_note} from 2 to 2
+		set {_rest} to substring of {_note} from 3 to length of {_note} parsed as number
+		# 東面
+		if {_first} is "e" or "E":
+			if {_second} is "+":
+				add {_rest} to {_maxX}
+			else if {_second} is "-":
+				remove {_rest} from {_maxX}
+			else if {_second} is ">":
+				add {_rest} to {_maxX}
+				add {_rest} to {_minX}
+			else:
+				message "%{@dev display name}% &4&l微調整指示が不適切です。&r > &6&o %{_note}%" to {_player}
+				exit
+		# 西面
+		else if {_first} is "w" or "W":
+			if {_second} is "+":
+				remove {_rest} from {_minX}
+			else if {_second} is "-":
+				add {_rest} to {_minX}
+			else if {_second} is ">":
+				remove {_rest} from {_maxX}
+				remove {_rest} from {_minX}
+			else:
+				message "%{@dev display name}% &4&l微調整指示が不適切です。&r > &6&o %{_note}%" to {_player}
+				exit
+		# 上面
+		else if {_first} is "a" or "A":
+			if {_second} is "+":
+				add {_rest} to {_maxY}
+			else if {_second} is "-":
+				remove {_rest} from {_maxY}
+			else if {_second} is ">":
+				add {_rest} to {_maxY}
+				add {_rest} to {_minY}
+			else:
+				message "%{@dev display name}% &4&l微調整指示が不適切です。&r > &6&o %{_note}%" to {_player}
+				exit
+		# 下面
+		else if {_first} is "b" or "B":
+			if {_second} is "+":
+				remove {_rest} from {_minY}
+			else if {_second} is "-":
+				add {_rest} to {_minY}
+			else if {_second} is ">":
+				remove {_rest} from {_maxY}
+				remove {_rest} from {_minY}
+			else:
+				message "%{@dev display name}% &4&l微調整指示が不適切です。&r > &6&o %{_note}%" to {_player}
+				exit
+		# 南面
+		else if {_first} is "s" or "S":
+			if {_second} is "+":
+				add {_rest} to {_maxZ}
+			else if {_second} is "-":
+				remove {_rest} from {_maxZ}
+			else if {_second} is ">":
+				add {_rest} to {_maxZ}
+				add {_rest} to {_minZ}
+			else:
+				message "%{@dev display name}% &4&l微調整指示が不適切です。&r > &6&o %{_note}%" to {_player}
+				exit
+		# 北面
+		else if {_first} is "n" or "N":
+			if {_second} is "+":
+				remove {_rest} from {_minZ}
+			else if {_second} is "-":
+				add {_rest} to {_minZ}
+			else if {_second} is ">":
+				remove {_rest} from {_maxZ}
+				remove {_rest} from {_minZ}
+			else:
+				message "%{@dev display name}% &4&l微調整指示が不適切です。&r > &6&o %{_note}%" to {_player}
+				exit
+		# どれでもない⇒エラー
+		else:
+			message "%{@dev display name}% &4&l微調整指示が不適切です。&r > &6&o %{_note}%" to {_player}
+			exit
+	# 座標計算がおわったら，最大・最小座標を設定し直して，キャンバスサイズ変更の指示を出す。
+	set {_s} to location({_minX}, {_minY}, {_minZ}, world of {_player})
+	set {_e} to location({_maxX}, {_maxY}, {_maxZ}, world of {_player})
+	setEndLocation({_player}, {_e}, {_s}, false)
+	exit
+
+
+
+
+# 【関数】キャンバスを削除
+# （引数）対象プレイヤー
+# （注釈）塗りつぶし領域も消えます
+function deleteCanvas(player: player):
+	set {_pid} to {_player}'s uuid
+	delete {dev::canvas::%{_pid}%::*}
+	deleteCFillCubes({_player})
+
+
+
+# 【関数】ある座標がキャンバス内に入っているのかを計算する
+# （引数）対象座標，キャンバス始点座標，キャンバス終点座標
+# （返値）指定座標がキャンバス内であればtrueを返す
+# （この関数が必要な理由）始点座標・終点座標はそれぞれ（xx.5,yy.5,zz.5）と，そのブロックの中心が保存されている。
+# 　これはこれで都合が良いのだが，今回の関数のように，ある座標が範囲内に入っているのかを調べるとなると勝手が違う。
+# 　ある2座標によってできる長方形範囲に含まれているのかを調べる「within」コンディションでは，ある座標が
+# 　xyzそれぞれの方向で「～以上～未満」の範囲に含まれているのかを調べる。
+# 　このため，「within」コンディションをそのまま使用すると，東・上・南の最端座標は範囲に含んでいると判定しない！
+# 　（参考）https://skripthub.net/docs/?id=9474
+# 　よって，当関数によって，理想の挙動に補正するものである。
+function isInCanvas(loc: location, start: location, end: location):: boolean:
+	# キャンバス始点座標のxyz各値を切り捨てて整数値にした上で，真の「キャンバス始点座標」を求める
+	set {_minX} to floor(x-loc of {_start})
+	set {_minY} to floor(y-loc of {_start})
+	set {_minZ} to floor(z-loc of {_start})
+	set {_realStart} to location({_minX},{_minY},{_minZ})
+	# キャンバス終点座標のxyz各値を切り上げて整数値にした上で，真の「キャンバス終点座標」を求める
+	set {_maxX} to ceil(x-loc of {_end})
+	set {_maxY} to ceil(y-loc of {_end})
+	set {_maxZ} to ceil(z-loc of {_end})
+	set {_realEnd} to location({_maxX},{_maxY},{_maxZ})
+	# ここで判定
+	if {_loc} is within {_realStart} and {_realEnd}:
+		return true
+	else:
+		return false
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# 塗りつぶし
+################################################################################
+
+# 【イベント】何も持たない状態で，的ブロックを右クリックすると，塗りつぶし座標を選択する
+on right click with air:
+	# 条件チェック
+	set {_pid} to the player's uuid
+	{dev::inUse::%{_pid}%} is true					# 建築支援モードがONであること
+	the event-world is "world"							# 通常ディメンションであること
+	the event-block is a target block				# クリックしたものが的ブロックであること
+	# 本処理
+	cancel the event
+	# キャンバスの設定があるかどうかで，座標の選択範囲に制限をかけるフラグを立てる。
+	# ・キャンバス設定がない⇒無制限に座標選択
+	# ・キャンバス設定があり，キャンバス内で座標選択をした⇒座標選択をキャンバス内に限る
+	# ・キャンバス設定があり，キャンバス外で座標選択をした⇒座標選択を中断
+	set {_canvasLock} to false
+	if {dev::canvas::%{_pid}%::end} exists:
+		if isInCanvas(the event-block's location, {dev::canvas::%{_pid}%::start}, {dev::canvas::%{_pid}%::end}) = true:
+			set {_canvasLock} to true
+		else:
+			message "%{@dev display name}% &4&lキャンバス外での座標選択はできません。" to player
+			exit
+	# 的ブロックのどの面を叩いたかによって，座標の探索モードを決める
+	set {_loc} to the targeted block's location
+	set {_serchedDirection} to ""
+	# 下にも的ブロックを置いて右クリック→盛土・埋戻モード
+	if the block below {_loc} is a target block:
+		message "%{@dev display name}% <lime>盛土・埋戻モード<r>で領域選択 を行います。" to player
+		set {_serchedDirection} to "abewsn"
+		set the block below {_loc} to air		# 下部的ブロックは空気に
+	# Shiftキーを押しながら右クリック→壁・床モード
+	else if the player is sneaking:
+		if event-direction is above:
+			message "%{@dev display name}% <lime>床モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "ewsn"
+		else if event-direction is below:
+			message "%{@dev display name}% <lime>床モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "ewsn"
+		else if event-direction is east:
+			message "%{@dev display name}% <lime>壁モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "absn"
+		else if event-direction is west:
+			message "%{@dev display name}% <lime>壁モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "absn"
+		else if event-direction is south:
+			message "%{@dev display name}% <lime>壁モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "abew"
+		else if event-direction is north:
+			message "%{@dev display name}% <lime>壁モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "abew"
+	# Shiftキーを押さずに右クリック→梁・柱モード
+	else:
+		if event-direction is above:
+			message "%{@dev display name}% <lime>柱モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "a"
+		else if event-direction is below:
+			message "%{@dev display name}% <lime>柱モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "b"
+		else if event-direction is east:
+			message "%{@dev display name}% <lime>梁モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "e"
+		else if event-direction is west:
+			message "%{@dev display name}% <lime>梁モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "w"
+		else if event-direction is south:
+			message "%{@dev display name}% <lime>梁モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "s"
+		else if event-direction is north:
+			message "%{@dev display name}% <lime>梁モード<r>で領域選択 を行います。" to player
+			set {_serchedDirection} to "n"
+	set the event-block to air														# 的ブロックのあった場所は空気に置き換える
+	set {_minY} to {@minimum altitude}										# 座標選択を許される最小高度の取得
+	set {_maxY} to y-loc of the event-block's location		# 座標選択を許される最大高度＝的ブロックの高度
+	selectFillCubes(player, the event-block, {_minY}, {_maxY},{_canvasLock},{_serchedDirection})
+
+
+# 【関数】塗りつぶし座標群の選択
+# （引数）プレイヤー，探索を開始するワールド内ブロック，座標選択を許される最小高度，座標選択を許される最大高度，座標選択範囲をキャンバス内に限るかどうか，探索する方向
+function selectFillCubes(player: player, block: block, minY: number, maxY: number, canvasLock: boolean, serchedDirection: text):
+	# プレイヤーのUUIDを取得。また「座標計算の勘定に入れる座標リスト」に探索開始ブロックの座標を入れる
+	set {_pid} to {_player}'s uuid
+	add {_block}'s location to {_calcLocs::*}
+	# 探索した回数を数える変数。
+	set {_culcCount} to 0
+	set {_calcLimit} to {@calc limit per tick}
+	# ここから「座標計算の勘定に入れる座標リスト」が尽きるまで計算をくり返す。
+	while true = true:
+		# 「座標計算の勘定に入れる座標」リストの「ループ回数」番目の値を取り出す
+		# （skriptクソ仕様）一般的なプログラムでは，配列（リスト）の「いち要素」が削除されるとインデックス番号も整理されるのだが
+		# 　Skriptではそれをしてくれないため，下のようなクソ処理になっている。pushやpopくらい実装しろｳﾞｫｹ
+		set {_iteration} to the loop-iteration
+		set {_element} to {_calcLocs::%{_iteration}%}
+		# 「座標計算の勘定に入れる座標」が尽きていたらループを離脱，そうでなければ自分自身の座標を塗りつぶし座標群のひとつとして加える
+		if {_element} doesn't exist:
+			message "%{@dev display name}% 座標探索計算が終わりました。" to {_player}	
+			stop loop
+		# 選択できる座標は合計4096までとする（ハードコーディング）
+		if size of {dev::fillCubes::%{_pid}%::*} >= 4096:
+			message "%{@dev display name}% &4&l塗りつぶし座標の指定数が限界を超えました。" to {_player}
+			stop loop
+		add {_element} to {dev::fillCubes::%{_pid}%::*}
+		# 当該座標から東西上下南北の各座標が「塗りつぶし座標」としてふさわしいかの探索を行う
+		# ただし各方向がそれぞれ探索方向（serchedDirection）に指定されていなければならない。
+		# まずループ座標の【下】のブロックを取得し，「探索した回数を数える変数」をインクリメント
+		# その後，そのブロックが選択座標の条件を満たしていて（ここは関数先任せ），
+		# かつ「座標計算の勘定に入れる座標」にも入っていない（ここは当関数内で判断）場合，
+		# その座標を「座標計算の勘定に入れる座標リスト」に入れる
+		# 
+		if {_serchedDirection} contains "b":
+			add 1 to {_culcCount}
+			set {_block} to the block below {_element}
+			if isReplacable({_player}, {_block}, {_minY}, {_maxY}, {_canvasLock}) = true:
+				{_calcLocs::*} doesn't contain {_block}'s location
+				add {_block}'s location to {_calcLocs::*}
+			if mod({_culcCount} , {_calcLimit}) = 0:
+				set {_size} to the size of {dev::fillCubes::%{_pid}%::*}
+				send the action bar with text "§6§l《§2§l塗りつぶし座標を探索中... §f§l合計 §a§l%{_size}% §f§l座標を選択§6§l》" to {_player}
+				wait a tick
+		# 同様に【上】
+		if {_serchedDirection} contains "a":
+			add 1 to {_culcCount}
+			set {_block} to the block above {_element}
+			if isReplacable({_player}, {_block}, {_minY}, {_maxY}, {_canvasLock}) = true:
+				{_calcLocs::*} doesn't contain {_block}'s location
+				add {_block}'s location to {_calcLocs::*}
+			if mod({_culcCount} , {_calcLimit}) = 0:
+				set {_size} to the size of {dev::fillCubes::%{_pid}%::*}
+				send the action bar with text "§6§l《§2§l塗りつぶし座標を探索中... §f§l合計 §a§l%{_size}% §f§l座標を選択§6§l》" to {_player}
+				wait a tick
+		# 同様に【東】
+		if {_serchedDirection} contains "e":
+			add 1 to {_culcCount}
+			set {_block} to the block east {_element}
+			if isReplacable({_player}, {_block}, {_minY}, {_maxY}, {_canvasLock}) = true:
+				{_calcLocs::*} doesn't contain {_block}'s location
+				add {_block}'s location to {_calcLocs::*}
+			if mod({_culcCount} , {_calcLimit}) = 0:
+				set {_size} to the size of {dev::fillCubes::%{_pid}%::*}
+				send the action bar with text "§6§l《§2§l塗りつぶし座標を探索中... §f§l合計 §a§l%{_size}% §f§l座標を選択§6§l》" to {_player}
+				wait a tick
+		# 同様に【西】
+		if {_serchedDirection} contains "w":
+			add 1 to {_culcCount}
+			set {_block} to the block west {_element}
+			if isReplacable({_player}, {_block}, {_minY}, {_maxY}, {_canvasLock}) = true:
+				{_calcLocs::*} doesn't contain {_block}'s location
+				add {_block}'s location to {_calcLocs::*}
+			if mod({_culcCount} , {_calcLimit}) = 0:
+				set {_size} to the size of {dev::fillCubes::%{_pid}%::*}
+				send the action bar with text "§6§l《§2§l塗りつぶし座標を探索中... §f§l合計 §a§l%{_size}% §f§l座標を選択§6§l》" to {_player}
+				wait a tick
+		# 同様に【南】
+		if {_serchedDirection} contains "s":
+			add 1 to {_culcCount}
+			set {_block} to the block south {_element}
+			if isReplacable({_player}, {_block}, {_minY}, {_maxY}, {_canvasLock}) = true:
+				{_calcLocs::*} doesn't contain {_block}'s location
+				add {_block}'s location to {_calcLocs::*}
+			if mod({_culcCount} , {_calcLimit}) = 0:
+				set {_size} to the size of {dev::fillCubes::%{_pid}%::*}
+				send the action bar with text "§6§l《§2§l塗りつぶし座標を探索中... §f§l合計 §a§l%{_size}% §f§l座標を選択§6§l》" to {_player}
+				wait a tick
+		# 同様に【北】
+		if {_serchedDirection} contains "n":
+			add 1 to {_culcCount}
+			set {_block} to the block north {_element}
+			if isReplacable({_player}, {_block}, {_minY}, {_maxY}, {_canvasLock}) = true:
+				{_calcLocs::*} doesn't contain {_block}'s location
+				add {_block}'s location to {_calcLocs::*}
+			if mod({_culcCount} , {_calcLimit}) = 0:
+				set {_size} to the size of {dev::fillCubes::%{_pid}%::*}
+				send the action bar with text "§6§l《§2§l塗りつぶし座標を探索中... §f§l合計 §a§l%{_size}% §f§l座標を選択§6§l》" to {_player}
+				wait a tick
+		#wait a tick
+	#message "終了" to {_player}
+
+
+# 【関数】ある単座標が，塗りつぶし座標としてふさわしいかを調べて返す
+# （引数）プレイヤー，探索開始座標，許される最小高度，許される最大高度，座標選択範囲をキャンバス内に限るかどうか
+# （返値）ふさわしいブロック判定であればtrueを返す
+function isReplacable(player: player, block: block, minY: number, maxY: number, canvasLock: boolean):: boolean:
+	set {_pid} to {_player}'s uuid
+	# もしキャンバスロックがオンのときは，ブロックがキャンバス内にあるかどうかを返す。
+	# キャンバスロックがオフなら，フラグは無条件でtrue
+	set {_isInCanvas} to true
+	if {_canvasLock} is true:
+		set {_isInCanvas} to isInCanvas({_block}'s location, {dev::canvas::%{_pid}%::start}, {dev::canvas::%{_pid}%::end})
+	# もしブロックが［置換可能に指定されているブロック］＆［座標がキャンバス内（キャンバスロックがかかっているときのみ）］
+	# ＆［確定した塗りつぶし座標に含まれていない］＆［最低＆最高高度内］なら，trueを返す
+	if {_block} is replacable blocks:		
+		{_isInCanvas} is true
+		{dev::fillCubes::%{_pid}%::*} doesn't contain {_block}'s location
+		{_block}'s location's altitude is between floor({_minY}) and ceil({_maxY})
+		return true
+	else:
+		return false
+
+
+# 【関数】塗りつぶし座標を削除
+# （引数）対象プレイヤー
+function deleteCFillCubes(player: player):
+	set {_pid} to {_player}'s uuid
+	delete {dev::fillCubes::%{_pid}%::*}
+
+
+# 【イベント】塗りつぶし座標にブロックを置くと，塗りつぶし座標群すべてに同じブロックを設置
+on place:
+	# 条件チェック⑴
+	set {_pid} to the player's uuid
+	{dev::inUse::%{_pid}%} is true																	# 建築支援モードがONであること
+	the event-world is "world"																			# 通常ディメンションであること
+	{dev::fillCubes::%{_pid}%::*} contains the block's location			# 塗りつぶし座標群に，置かれたブロックの座標が含まれていること
+	# 条件チェック⑵
+	if the player's gamemode is survival:																			# プレイヤーがサバイバルモードのとき...
+		set {_pItem} to the type of the player's tool 													# プレイヤーの所持アイテムブロック（単体）を取得し...
+		set {_size} to the size of {dev::fillCubes::%{_pid}%::*}								# 選択座標の数を数え...
+		set {_amount} to amountItemInInventoryOrEnderchest(player, {_pItem})		# インベントリ＋エンダーチェストの合計アイテム数を数え...
+		if {_size} > ({_amount}+1):																						# アイテム数が足りない場合は...
+			message "%{@dev display name}% &4&l現在の所有ブロック数では塗りつぶし座標を全て満たせません。" to the player
+			message " &c塗りつぶし座標数:&l%{_size}%&r，&a所有ブロック数:&l%{_amount}%" to the player
+			cancel the event
+			stop
+	# 本処理
+	# プレイヤーがサバイバルモードならば，塗りつぶし座標数だけアイテムを奪う
+	if the player's gamemode is survival:
+		removeItemFromInventoryOrEnderchest(player, {_pItem}, {_size})
+	# 置かれたブロックの座標をリストから取りのぞき，
+	remove the block's location from {dev::fillCubes::%{_pid}%::*}
+	# 置いたブロックの状態を変数に取得する
+	set {_eventBlockData} to the event-block's block data
+	# 塗りつぶし座標群すべてに，設置したブロックと同じものを，可能な限り同じ状態（向きとか）で設置し，設置された座標は削除
+	loop {dev::fillCubes::%{_pid}%::*}:
+		set the block at loop-value to {_eventBlockData}					# 置きたいブロックを置いて....
+		remove the loop-value from {dev::fillCubes::%{_pid}%::*}	# 「塗りつぶし座標群」からは消す
+
+
+
+# 【関数】プレイヤーが，特定のアイテムを，インベントリもしくはエンダーチェストに合計いくつ所持しているかどうかをチェックして返す
+# （引数）プレイヤー，アイテム
+# （返り値）インベントリ＋エンダーチェストにあるアイテムの数を返す
+function amountItemInInventoryOrEnderchest(player: player, item: item):: number:
+	set {_result} to 0
+	add the amount of {_item} in {_player}'s inventory to {_result}
+	add the amount of {_item} in {_player}'s enderchest to {_result}
+	return {_result}
+
+
+
+# 【関数】プレイヤーのインベントリやエンダーチェストから，特定のアイテムを奪う
+# 　まず，プレイヤーのインベントリ内からアイテムを奪い，足りなくなったらエンダーチェストから奪う
+# （引数）プレイヤー，アイテム，奪う数
+function removeItemFromInventoryOrEnderchest(player: player, item: item, amount: number):
+	# まずインベントリ内のアイテム数を数えて，
+	set {_amountInInventory} to the amount of {_item} in {_player}'s inventory
+	if {_amountInInventory} > {_amount}:
+		remove {_amount} of {_item} from {_player}'s inventory
+		exit
+	else:
+		remove {_amountInInventory} of {_item} from {_player}'s inventory
+		set {_amountInEnderchest} to the amount of {_item} in {_player}'s enderchest
+		remove ({_amount} - {_amountInInventory}) of {_item} from {_player}'s enderchest
+		
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# 水を張る・水を抜く
+################################################################################
+
+# 【関数】塗りつぶし座標に水を張る，水を抜く
+# （引数）プレイヤー，水を張るフラグ（falseだと水を抜く）
+function setWater(player: player, isFill: boolean):
+	# 条件チェック
+	set {_pid} to {_player}'s uuid
+	{_player}'s world is "world"							# 通常ディメンションであること
+	{dev::fillCubes::%{_pid}%::*} exists		# 塗りつぶし座標群の設定が終わっていること
+	# 本処理
+	# 塗りつぶし座標群すべてに水を張るか抜く
+	loop {dev::fillCubes::%{_pid}%::*}:
+		# 水を満たす場合の処理
+		if {_isFill} = true:
+			# 条件チェック
+			if {_player}'s gamemode is survival:
+				set {_reducedRights} to {@cost of fill water}
+				if getRights({_player}) < ceil({_reducedRights}):
+					message "%{@dev display name}% &4&l利権値が底を尽きました。" to {_player}
+					stop trigger
+			# 本処理
+			set the block at loop-value to water													# 選択座標を水にする
+			if {_player}'s gamemode is survival:
+				set {_reducedRightsAtOnce} to roundByPer({_reducedRights})	# 利権値計算
+				addRights({_player}, (-1 * {_reducedRightsAtOnce}))					# 利権値を奪う
+		# 水を抜く場合の処理
+		else:
+			# 条件チェック
+			if {_player}'s gamemode is survival:
+				set {_reducedRights} to {@cost of drain water}
+				if getRights({_player}) < ceil({_reducedRights}):
+					message "%{@dev display name}% &4&l利権値が底を尽きました。" to {_player}
+					stop trigger
+			# 本処理
+			set the block at loop-value to air															# 選択座標を空気にする
+			if {_player}'s gamemode is survival:
+				set {_reducedRightsAtOnce} to roundByPer({_reducedRights})		# 利権値計算
+				addRights({_player}, (-1 * {_reducedRightsAtOnce}))						# 利権値を奪う
+		remove the loop-value from {dev::fillCubes::%{_pid}%::*}	# 「塗りつぶし座標群」からは消す
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# ブロックの置換
+################################################################################
+
+# 【関数】ブロックの置換
+# （引数）実行プレイヤー，範囲始点，範囲終点，置換率
+function devReplace(player: player, start: location, end: location, percentage: number):
+	# 条件チェック
+	set {_pid} to {_player}'s uuid
+	{_player}'s world is "world"							# 通常ディメンションであること
+	{dev::canvas::%{_pid}%::end} exists				# キャンバスの設定が終わっていること
+	if the actual target block of {_player} doesn't exist:
+		message "%{@dev display name}% &4&lブロックがターゲットされていません。" to {_player}
+		exit
+	# プレイヤーの持っているブロックアイテム（単体）を取得し，ブロックアイテムであるかを検討
+	set {_pItem} to the type of {_player}'s tool
+	if {_pItem} isn't a block:
+		message "%{@dev display name}% &4&l所持アイテムはブロックではありません。" to {_player}
+		exit
+	# 本処理
+	# ターゲットしているブロック（＝置換元）のブロック名を取得。また利権値割引対象であるかも調べる。
+	# （tips）block型は，ブロック名だけではなく存在座標も内包する。ブロック名だけを知るには「type of ...」だ。
+	set {_typeTarget} to the type of the actual target block of {_player}
+	set {_isDiscount} to isDiscountRights({_player}, {_typeTarget})
+	# ブロック1つの置換が行われるたびに減らされる利権値を計算。
+	set {_reducedRights} to {@cost of breaking}
+	if {_isDiscount} is true:
+		set {_reducedRights} to {@cost of breaking} * {@job block discount rate}
+	# キャンバス内の全てのブロックそれぞれについて，それが置換元のブロックと一致する場合には，置換先のブロックに置き換える。
+	loop blocks within {_start} and {_end}:
+		# ブロック置換の条件チェック（ブロック名の一致，割合抽選，プレイヤーが置換先ブロックを持っているか，利権値はあるか）
+		"%the type of the loop-block%" = "%{_typeTarget}%"		# どちらも一度，文字列型に直さないと，想定した動作をしない
+		chance of {_percentage}%
+		if {_pItem} isn't air:
+			if {_player} don't have {_pItem}:
+				message "%{@dev display name}% &4&l置換先ブロックが底を尽きました。" to {_player}
+				stop trigger
+		if getRights({_player}) < ceil({_reducedRights}):
+			message "%{@dev display name}% &4&l利権値が底を尽きました。" to {_player}
+			stop trigger
+		# ブロック置換の本処理（サバイバルなら置換先ブロックも取る）
+		break the loop-block naturally if {_player}'s gamemode is survival										# 置換元ブロックを壊して...
+		set the loop-block to {_pItem}																												# そこに置換先ブロックを設置し...
+		remove 1 of {_pItem} from {_player}'s inventory if {_player}'s gamemode is survival		# プレイヤーの置換先ブロックは奪い...
+		set {_reducedRightsAtOnce} to roundByPer({_reducedRights})														# 利権値も取る
+		addRights({_player}, (-1 * {_reducedRightsAtOnce}))
+
+
+# 【関数】割引チャンス？
+#   置換や破壊されようとしているブロックが，プレイヤーの利権で壊すと得をするブロックかどうかを返す
+# （引数）プレイヤー，壊されようとしているブロック
+# （返値）プレイヤーの利権で壊すと得をするブロックだったらtrueを返す
+function isDiscountRights(player: player, item: item):: boolean:
+	# 職業IDを取得
+	set {_job} to getJob({_player})
+	if {_job} = "lumberjack":
+		if {_item} is cutcut:
+			return true
+		else:
+			return false
+	else if {_job} = "earthwork":
+		if {_item} is digdig:
+			return true
+		else if {_item} is digdigpick:
+			return true
+		else:
+			return false
+	else if {_job} = "miner":
+		if {_item} is minemine:
+			return true
+		else:
+			return false
+	else if {_job} = "plasterwork":
+		if {_item} is plastplast:
+			return true
+		else:
+			return false
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# 街路樹の生成
+################################################################################
+
+# 【イベント】骨粉で苗木を叩くと（即座に）街路樹に成長する
+# （補足）設置した苗木のある場所がキャンバス内にあれば良い
+# 　苗木から数えて上8マス，3×3の範囲に街路樹が生成される。
+# 　このとき，空間がなくても既設のブロックをブチ抜いて街路樹が生成されるので注意（処理めんどかった）
+on right click holding bone meal:
+	set {_player} to the player
+	set {_pid} to the player's uuid
+	# 条件チェック
+	the event-world is "world"									# 通常ディメンションであること
+	the event-block is source of street trees		# クリックしたものが苗木であること
+	{_player} is sneaking												# Shiftキーを押していること
+	{dev::inUse::%{_pid}%} is true							# 支援モード使用中であること
+	# 利権値が足りないとき（ただしクリエイティブは免除，樵夫は減免）。なお利権値はここで奪う。
+	if the player's gamemode is survival:
+		set {_cost} to {@cost of generate street tree}
+		if getJob(player) is "lumberjack":
+			set {_cost} to {@cost of generate street tree} * {@job block discount rate}
+		if getRights({_player}) < ceil({_cost}):
+			message "%{@dev display name}% &4&l利権値が足りません。" to {_player}
+			stop trigger
+		addRights(player, (-1 * ceil({_cost})))
+	# クリックされた苗木の座標がキャンバス内であること
+	#isInCanvas(event-block's location, {dev::canvas::%{_pid}%::start}, {dev::canvas::%{_pid}%::end}) is true
+	# 本処理
+	cancel the event
+	remove bone meal from the player if player's gamemode is survival
+	set {_eventLoc} to the event-block's location
+	# 苗木の種類のみを取得し，使用する幹（フェンス）と葉を確定する
+	if the event-block is oak sapling:
+		set {_treeType} to "oak"
+		set {_trunk} to oak fence
+		set {_leave} to oak leaves
+	else if the event-block is spruce sapling:
+		set {_treeType} to "spruce"
+		set {_trunk} to spruce fence
+		set {_leave} to spruce leaves
+	else if the event-block is birch sapling:
+		set {_treeType} to "birch"
+		set {_trunk} to birch fence
+		set {_leave} to birch leaves
+	else if the event-block is jungle sapling:
+		set {_treeType} to "jungle"
+		set {_trunk} to jungle fence
+		set {_leave} to jungle leaves
+	else if the event-block is acacia sapling:
+		set {_treeType} to "acacia"
+		set {_trunk} to acacia fence
+		set {_leave} to acacia leaves
+	else if the event-block is dark oak sapling:
+		set {_treeType} to "dark oak"
+		set {_trunk} to dark oak fence
+		set {_leave} to dark oak leaves
+	else if the event-block is mangrove propagule:
+		set {_treeType} to "mangrove"
+		set {_trunk} to mangrove fence
+		set {_leave} to mangrove leaves
+	else if the event-block is cherry sapling:
+		set {_treeType} to "cherry"
+		set {_trunk} to cherry fence
+		set {_leave} to cherry leaves
+	else:
+		message "%{@dev display name}% &4&l苗木の種類を取得できませんでした。" to the player
+		exit trigger
+	# イベント座標を含めて上3マスに，苗木と同名のフェンスを設置
+	set {_x} to x-loc of {_eventLoc}
+	set {_y} to y-loc of {_eventLoc}
+	set {_z} to z-loc of {_eventLoc}
+	set all blocks within {_eventLoc} and location({_x}, {_y} +2, {_z}) to {_trunk}
+	# さらに上空5マスに，3×3の大きさで，苗木と同名の葉を設置
+	set {_leavesMin} to location({_x} -1, {_y} +3, {_z} -1)
+	set {_leavesMax} to location({_x} +1, {_y} +7, {_z} +1)
+	loop all blocks within {_leavesMin} and {_leavesMax}:
+		set the loop-block to {_leave}
+		make the loop-block persistent
+	# 一定割合で葉を減衰させる
+	set {_per} to {@leaves atenuation rate} * 100
+	loop all blocks within location({_x} -1, {_y} +3, {_z} -1) and location({_x} +1, {_y} +7, {_z} -1):
+		chance of {_per} %:
+			set the loop-block to air
+	loop all blocks within location({_x} -1, {_y} +3, {_z} -1) and location({_x} -1, {_y} +7, {_z} +1):
+		chance of {_per} %:
+			set the loop-block to air
+	loop all blocks within location({_x} +1, {_y} +3, {_z} -1) and location({_x} +1, {_y} +7, {_z} +1):
+		chance of {_per} %:
+			set the loop-block to air
+	loop all blocks within location({_x} -1, {_y} +3, {_z} +1) and location({_x} +1, {_y} +7, {_z} +1):
+		chance of {_per} %:
+			set the loop-block to air
+	loop all blocks within location({_x} -1, {_y} +7, {_z} -1) and location({_x} +1, {_y} +7, {_z} +1):
+		# テッペンまん中のブロックだけは必ず残す
+		if the loop-block's location = location({_x}, {_y} +7, {_z}):
+			continue
+		chance of {_per} %:
+			set the loop-block to air
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# 等高線掘削
+################################################################################
+
+# 【イベント】Shiftキーを押しながら対象ブロックを壊すと，キャンバス内の同じ高さのブロックを破壊する
+# （補足）破壊されるブロックの条件は以下の通り。
+# 　・そのブロックが職業ブロックであること。土工が削れば土や砂を一括で削るし，坑夫が削れば石が削られる
+# 　・そのブロックの上が置換可能ブロックであること
+# 　・そのブロックと掘削をはじめたブロックの間は，段を飛び越えずまた降りずに歩いて行けること
+# 　・もちろんキャンバス内にあるブロックであること
+# 　つまり，同じレベルの対象ブロックのみ壊される。よって「等高線掘削」
+on break:
+	set {_player} to the player
+	set {_pid} to the player's uuid
+	# 条件チェック
+	the player is sneaking																	# Shiftキーを押していること
+	the event-world is "world"															# 通常ディメンションであること
+	{dev::canvas::%{_pid}%::end} exists											# キャンバスの設定が済んでいること
+	the block above the event-block is replacable blocks		# 削ったブロックの真上が置換可能ブロックであること
+	# ↓削ったブロックがキャンバス内であること
+	isInCanvas(the event-block's location, {dev::canvas::%{_pid}%::start}, {dev::canvas::%{_pid}%::end}) is true
+	# 土工・坑夫が職業ブロックを壊したorクリエイティブモード（それ以外は何も言わず退場）
+	if getJob(player) is "earthwork": 
+		if the event-block isn't digdig or digdigpick:
+			exit trigger
+	else if getJob(player) is "miner": 
+		if the event-block isn't minemine:
+			exit trigger
+	else:
+		if the player's gamemode is survival:
+			exit trigger
+	# 実処理
+	add the event-block's location to {_calcLocs::*}
+	# ここから「座標計算の勘定に入れる座標リスト」が尽きるまで計算をくり返す。
+	while true = true:
+		# 「座標計算の勘定に入れる座標」リストの「ループ回数」番目の値を取り出す
+		# （skriptクソ仕様）一般的なプログラムでは，配列（リスト）の「いち要素」が削除されるとインデックス番号も整理されるのだが
+		# 　Skriptではそれをしてくれないため，下のようなクソ処理になっている。pushやpopくらい実装しろｳﾞｫｹ
+		set {_iteration} to the loop-iteration
+		set {_element} to {_calcLocs::%{_iteration}%}
+		# 「座標計算の勘定に入れる座標」が尽きていたらループを離脱，そうでなければ自分自身の座標を「等高線掘削対象の座標群」のひとつとして加える
+		if {_element} doesn't exist:		
+			stop loop
+		add {_element} to {_contourCubes::*}
+		# 当該座標から東西南北の各座標が「等高線掘削対象の座標」としてふさわしいかの探索を行う
+		# ループ座標の【東】のブロックを取得し，そのブロックが等高線掘削対象の座標の条件を満たしていて（ここは関数先任せ），
+		# かつ「座標計算の勘定に入れる座標」にも入っていない（ここは当関数内で判断）
+		# かつ「確定した等高線掘削対象の座標に含まれていない」（ここは当関数内で判断）場合，
+		# その座標を「座標計算の勘定に入れる座標リスト」に入れる
+		# 同様に【東】
+		set {_block} to the block east {_element}
+		if isReplacableForContour({_player}, {_block}, event-block) = true:
+			{_calcLocs::*} doesn't contain {_block}'s location
+			{_contourCubes::*} doesn't contain {_block}'s location
+			add {_block}'s location to {_calcLocs::*}
+		# 同様に【西】
+		set {_block} to the block west {_element}
+		if isReplacableForContour({_player}, {_block}, event-block) = true:
+			{_calcLocs::*} doesn't contain {_block}'s location
+			{_contourCubes::*} doesn't contain {_block}'s location
+			add {_block}'s location to {_calcLocs::*}
+		# 同様に【南】
+		set {_block} to the block south {_element}
+		if isReplacableForContour({_player}, {_block}, event-block) = true:
+			{_calcLocs::*} doesn't contain {_block}'s location
+			{_contourCubes::*} doesn't contain {_block}'s location
+			add {_block}'s location to {_calcLocs::*}
+		# 同様に【北】
+		set {_block} to the block north {_element}
+		if isReplacableForContour({_player}, {_block}, event-block) = true:
+			{_calcLocs::*} doesn't contain {_block}'s location
+			{_contourCubes::*} doesn't contain {_block}'s location
+			add {_block}'s location to {_calcLocs::*}
+	# 選択された「等高線掘削対象の座標群」およびその上空のブロックをすべて素手で破壊
+	loop {_contourCubes::*}:
+		# 利権値が足りないときは処理中断（ただしクリエイティブは免除）。なお利権値はここで奪う。
+		if the player's gamemode is survival:
+			set {_reducedRights} to roundByPer({@cost of contour})
+			if getRights({_player}) < ceil({_reducedRights}):
+				message "%{@dev display name}% &4&l利権値が底を尽きました。" to the player
+				stop trigger
+			addRights(player, (-1 * ceil({_reducedRights})))
+			break the block above the block at loop-value naturally			# 座標直上にあるブロックを壊して...
+			break the block at loop-value naturally											# 座標自体にあるブロックを壊す
+		# クリエイティブの時は，ブロックを消すだけでアイテムのドロップは無し
+		else:
+			set the block above the block at loop-value to air			# 座標直上にあるブロックを消して...
+			set the block at loop-value to air											# 座標自体にあるブロックを消す
+		remove the loop-value from {_contourCubes::*}								# 「等高線掘削対象の座標群」からは消す
+		
+
+# 【関数】ある単座標が，等高線掘削対象の座標としてふさわしいかを調べて返す
+# （引数）プレイヤー，探索開始座標
+# （返値）ふさわしいブロック判定であればtrueを返す
+function isReplacableForContour(player: player, block: block, starting: block):: boolean:
+	set {_pid} to {_player}'s uuid
+	# もしブロックが［《真上の》ブロックが置換可能に指定されているブロック］＆［座標がキャンバス内］
+	# ＆［当該ブロックが最初に破壊したブロックと一致］なら，trueを返す
+	if the block above {_block} is replacable blocks:
+		isInCanvas({_block}'s location, {dev::canvas::%{_pid}%::start}, {dev::canvas::%{_pid}%::end}) is true
+		# 当該ブロック・最初に破壊したブロックいずれも草ブロックの場合，それは土であると見なす
+		# どちらも一度，文字列型に直さないと，想定した動作をしない
+		set {_bBlock} to "%the type of {_block}%"
+		if {_bBlock} is "grass block":
+			set {_bBlock} to "dirt"
+		set {_sBlock} to "%the type of {_starting}%"
+		if {_sBlock} is "grass block":
+			set {_sBlock} to "dirt"
+		{_bBlock} = {_sBlock}
+		return true
+	else:
+		return false
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# 領域のコピー＆ペースト，保存，読み込み
+################################################################################
+
+# 【関数】キャンバスのコピー
+# （引数）プレイヤー
+function copyCanvas(player: player):
+	broadcast "起動"
+	set {_pid} to {_player}'s uuid
+	# 条件チェック
+	{_player}'s world is "world"					# 通常ディメンションであること
+	{dev::canvas::%{_pid}%::end} exists		# キャンバスの設定が済んでいること
+	# 本処理
+	# 空のストラクチャーを作成し，そこにキャンバスのデータをコピー
+	set {dev::structure::data::%{_pid}%} to structure named "%{_pid}%:clipboard"
+	fill structure {dev::structure::data::%{_pid}%} between {dev::canvas::%{_pid}%::start} and {dev::canvas::%{_pid}%::end}
+	# キャンバス範囲は消します！
+	deleteCanvas({_player})
+	broadcast "終了"
+
+
+# 【関数】貼り付けプレビュー
+# （引数）プレイヤー
+function pasteStructure(player: player, location: location):
+	broadcast "起動"
+	set {_pid} to {_player}'s uuid
+	# 条件チェック
+	{_player}'s world is "world"															# 通常ディメンションであること
+	if {dev::canvas::%{_pid}%::start} exists:									# キャンバスの設定がないこと
+		message "%{@dev display name}% &4&l当機能は，キャンバス設定があると使えません。" to {_player}
+		exit trigger
+	if the target block of {_player} isn't a target block:		# プレイヤーのターゲット先が的ブロックであること
+		message "%{@dev display name}% &4&l当機能は，的ブロックにターゲットを合わせなければ使えません。" to {_player}
+		exit trigger
+	# 本処理
+	set {_o} to structure size of {dev::structure::data::%{_pid}%}
+	set structure rotation of {dev::structure::data::%{_pid}%} to clockwise 90
+	broadcast "%x of {_o}%"
+	place structure {dev::structure::data::%{_pid}%} at target block of {_player}'s location
+	broadcast "終了"
+		
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# その他イベント
+################################################################################
+
+# 【イベント】ログアウト時，当人の建築支援インスタンスを解除
+# （補足）関数先で，キャンバスなども消される
+on disconnect:
+	set {_player} to the player
+	stopDevelopmentInstance({_player})
+
+
+
+# 【イベント】サーバー開始時，全プレイヤーの建築支援利用フラグ，キャンバスなどを全消去する
+on skript start:
+	delete {dev::inUse::*}
+	delete {dev::canvas::*}
+	delete {dev::fillCubes::%{_pid}%::*}
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# その他関数
+################################################################################
+
+# 【関数】確率で数字を丸める
+# （説明）引数を投げると，（（引数の小数点以下）×100）%の確率で小数点を切り上げて返し，そうでなければ切り捨てて返す。
+# 　たとえば「5.85」を投げると，85%の確率で6を，15%の確率で5を返す。
+# （引数）小数点込みの数値
+function roundByPer(number: number):: number:
+	set {_result} to floor({_number})
+	set {_percentage} to 100 * ({_number} - floor({_number}))
+	chance of {_percentage} %:
+		add 1 to {_result}
+	return {_result}
+
+
+# 【関数】プレイヤーの職業を取得する
+# （引数）プレイヤー
+# （返値）プレイヤーの職業
+# （メモ）lumberjackは樵夫，earthworkは土工，minerは坑夫，plasterworkは左官，なおunemployedは無職
+function getJob(player: player):: text:
+	return {job::%{_player}'s uuid%}
+
+
+# 【関数】プレイヤーの利権値を取得する
+# （引数）プレイヤー
+# （返値）プレイヤーの利権値
+function getRights(player: player):: number:
+	return {jobRights::%{_player}'s uuid%}
+

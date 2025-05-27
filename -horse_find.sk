@@ -1,0 +1,32 @@
+# ウマの名前を入力して、そのウマの場所を表示するコマンドを追加するスクリプト。
+# 作：ぎまっち
+# 2025/02/08 初版
+#
+
+
+#ウマ検索コマンド==================================================================================================
+command /horse-find <text>:
+    trigger:
+        loop all entities:
+            
+            #ウマの名前と座標を取得する。
+            loop-entity's name is arg-1
+            set {_e} to loop-entity
+            set {_x} to {_e}' x-coordinate
+            set {_y} to {_e}' y-coordinate
+            set {_z} to {_e}' z-coordinate
+
+            #ウマの名前と座標とBlueMapのリンクボタンを表示する。
+            send "&l%{_e}'s name%&r の座標 X:%{_x}% / Y:%{_y}% / Z:%{_z}%" to player
+            #set {_zahyo} to "%{_e}'s name%の座標 X:%{_x}% / Y:%{_y}% / Z:%{_z}%"
+
+            set {_link} to "<link:http://nicotetsu.aa0.netvolante.jp/#world:%{_x}%:%{_y}%:%{_z}%:100:0:0:0:1:flat>&b[BlueMapで開く]<reset>"
+            set {_loc} to "<sgt:%{_e}'s name%の座標 X:%{_x}% / Y:%{_y}% / Z:%{_z}%>&e[チャット欄に座標を表示]<reset>"
+            #evaluate "send ""%{_link}% %{_loc}%"" to player"
+
+            apply glowing 1 to the loop-entity for 60 seconds
+
+            #OP権限者には、さらに、テレポートボタンを表示する。
+            if the player is op:
+                set {_tp} to "<command:/tp @p %{_x}% %{_y}% %{_z}%>&6[ウマの場所にテレポートする]<reset>"
+            #    evaluate "send ""%{_tp}%"" to player"

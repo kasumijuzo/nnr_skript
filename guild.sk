@@ -1,0 +1,899 @@
+#	職業スクリプト
+#	2025/04/12 skript 2.10.2に対応（エイリアスの追加、「on rightclick」の記載方法の変更）
+
+
+# ◇■◇別名一覧◇■◇
+aliases:
+
+	#各種のテラコッタ
+	any terracotta = terracotta , white_terracotta , orange_terracotta , magenta_terracotta , light_blue_terracotta , yellow_terracotta , lime_terracotta , pink_terracotta , gray_terracotta , light_gray_terracotta , cyan_terracotta , purple_terracotta , blue_terracotta , brown_terracotta , green_terracotta , red_terracotta , black_terracotta
+	# 各種のコンクリート
+	any concrete = white_concrete , orange_concrete , magenta_concrete , light_blue_concrete , yellow_concrete , lime_concrete , pink_concrete , gray_concrete , light_gray_concrete , cyan_concrete , purple_concrete , blue_concrete , brown_concrete , green_concrete , red_concrete , black_concrete
+	# 各種の葉
+	leaves = oak_leaves , spruce_leaves , birch_leaves , jungle_leaves , acacia_leaves , dark_oak_leaves , azalea_leaves , flowering_azalea_leaves , mangrove_leaves , cherry_leaves , nether_wart_block , warped_wart_block
+	#各種の原木、幹
+	any log = oak_log , spruce_log , birch_log , jungle_log , acacia_log , dark_oak_log , crimson_stem , warped_stem , mangrove_log , cherry_log
+	# 各種のツルハシ
+	any pickaxe = wooden_pickaxe , stone_pickaxe , iron_pickaxe , diamond_pickaxe , golden_pickaxe , netherite_pickaxe
+	# 各種のシャベル
+	any shovel = wooden_shovel , stone_shovel , iron_shovel , diamond_shovel , golden_shovel , netherite_shovel
+	# 各種の斧
+	any axe = wooden_axe , stone_axe , iron_axe , diamond_axe , golden_axe , netherite_axe
+	# 各種のクワ
+	any hoe = wooden_hoe , stone_hoe , iron_hoe , diamond_hoe , golden_hoe , netherite_hoe
+
+
+	# 土工のシャベル特効ブロック 粘土、粗い土、耕地、草ブロック・土、砂利、菌糸、ポドゾル、赤い砂、砂、ソウルサンド、草の道、雪ブロック
+	digdig     = clay, coarse dirt, farmland, grass block, dirt, gravel, mycelium, podzol, red sand, sand, soul sand, dirt path, snow block
+	# 土工のつるはし特効ブロック 赤い砂岩，砂岩
+	digdigpick = red sandstone, sandstone
+	# 坑夫の特効ブロック 石、丸石、安山岩、閃緑岩、花崗岩、黒曜石、ネザーラック、深層岩，方解石，ブラックストーン
+	minemine   = stone, cobblestone, andesite, diorite, granite, obsidian, magma block, netherrack, deepslate, cobbled deepslate, calcite, blackstone
+	# 左官の特効ブロック 各種のテラコッタ，各種のコンクリート
+	plastplast = any terracotta, any concrete
+	# 樵夫の特効ブロック 各種の原木
+	cutcut = any log, stripped crimson stem, stripped warped stem
+
+
+
+# ◇■◇オプション◇■◇
+options:
+	# 労働局の名称
+	guild display name : "&7[&aArbeitsamt&7]&r"
+	# 1日ごとに補充される利権数
+	# 2025/04/12から当面の間、5000から10000に変更している。あとで戻すこと ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !
+	job rights on day: 10000
+	# 蓄積される利権数の最大値
+	max job rights: 100000
+	# 利権を1回行使するごとに消費される利権数（職種別）
+	per job rights lumberjack: 100
+	per job rights earthwork: 50
+	per job rights miner: 50
+	per job rights plasterwork: 50
+	# コンクリートの簡易生成にかかる利権数（職種別）
+	per rights generate plasterwork: 250
+	# 遡って給付が行われる最大日数
+	days max G : 100000
+
+
+# ◇■◇変数の初期値◇■◇
+# ・各プレイヤーの初回ログイン時に設定する。variablesは使用しない。
+on first join:
+	set {lastJobChangeDay::%the player's uuid%} to 0		# 前回に仕事を変更した日
+	set {jobRights::%the player's uuid%} to 50000			# 保有利権値
+	set {jobValid::%the player's uuid%} to true				# 利権仕様スイッチ
+	set {job::%the player's uuid%} to "unemployed"			# 職業
+	set {openedMerchantType::%the player's uuid%} to ""		# 現在開いている交易ウィンドウのタイプ
+
+#variables:
+#	{lastJobChangeDay::%the player's uuid%} = 0		# 前回に仕事を変更した日
+#	{jobRights::%the player's uuid%} = 500
+#	{jobValid::%the player's uuid%} = true
+#	{job::%the player's uuid%} = "unemployed"
+
+
+
+
+
+
+# ◇■◇コマンド◇■◇
+command /guild <string=wizard> [<string=null> [<string=null> <string=null>]]:
+	aliases: /job
+	trigger:
+		set {_order} to arg-1
+		# 第1引数"wizard"→ジョブ・利権関連の対話型プログラムを始動◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆
+		if {_order} is "wizard":
+			set {_action} to arg-2
+			# 第2引数"null"→ウィザードの最初のメッセージ
+			if {_action} is "null":
+				# 1行目
+				message "%{@guild display name}% こちら職業安定所です。ご用件をお選びください。" to the player
+				# 2行目
+				set {_m::1} to a new text component from " &7> "
+				set {_m::2} to a new text component from "&b&n転職したい&r"
+				set click event of {_m::2} to a new click event to run command "/guild wizard change"
+				set {_m::3} to a new text component from " "
+				set {_m::4} to a new text component from "&b&n説明を聞きたい&r"
+				set click event of {_m::4} to a new click event to run command "/guild wizard help"
+				set {_m::5} to a new text component from " "
+				set {_m::6} to a new text component from "&b&n利権ON&r"
+				set click event of {_m::6} to a new click event to run command "/guild rights true"
+				set hover event of {_m::6} to a new hover event showing "利権値消費による機能をONにします"
+				set {_m::7} to a new text component from " "
+				set {_m::8} to a new text component from "&b&n利権OFF&r"
+				set click event of {_m::8} to a new click event to run command "/guild rights false"
+				set hover event of {_m::8} to a new hover event showing "利権値消費による機能をOFFにします"
+				set {_l} to merge components {_m::*}
+				send component {_l} to the player
+				delete {_m::*}
+				# 4行目
+				set {_m::1} to a new text component from " &7> &r簡易クラフト・交易（ "
+				set {_m::2} to a new text component from "&b&nコンクリート&r"
+				set click event of {_m::2} to a new click event to run command "/guild trade powderToConcrete"
+				set hover event of {_m::2} to a new hover event showing "各種コンクリートパウダーをコンクリートへ一括変換する簡易クラフト画面を開きます%nl%（左官専用機能）"
+				#set {_m::3} to a new text component from " "
+				#set {_m::4} to a new text component from "&b&n土系ブロック&r"
+				#set click event of {_m::4} to a new click event to run command "/guild trade dirtTodirt"
+				#set hover event of {_m::4} to a new hover event showing "一定の比率で，外国と土系ブロックを交換する交易画面を開きます%nl%（職業・場所によってレートが異なります）"
+				#set {_m::5} to a new text component from " "
+				#set {_m::6} to a new text component from "&b&n石系ブロック&r"
+				#set click event of {_m::6} to a new click event to run command "/guild trade stoneToStone"
+				#set hover event of {_m::6} to a new hover event showing "一定の比率で，外国と石系ブロックを交換する交易画面を開きます%nl%（職業・場所によってレートが異なります）"
+				#set {_m::7} to a new text component from " ）"
+				set {_m::3} to a new text component from " ）"
+				set {_l} to merge components {_m::*}
+				send component {_l} to the player
+				delete {_m::*}
+				# OP権限者はさらにコマンドが表示される
+				if the player is op:
+					# op1行目
+					set {_m::1} to a new text component from " &7> &r値の変更（"
+					set {_m::2} to a new text component from "&7&n最終転職日&r"
+					set click event of {_m::2} to a new click event to suggest command "/guild set day"
+					set hover event of {_m::2} to a new hover event showing "指定プレイヤーの最終転職日を変更します。%nl%クリックして表示されるコマンドに続いて，対象者のIDと設定したい最終転職日を入力してください。"
+					set {_m::3} to a new text component from " "
+					set {_m::4} to a new text component from "&7&n利権値&r"
+					set click event of {_m::4} to a new click event to suggest command "/guild set rights"
+					set hover event of {_m::4} to a new hover event showing "指定プレイヤーの利権値を変更します。%nl%クリックして表示されるコマンドに続いて，対象者のIDと設定したい利権値を入力してください。"
+					set {_m::5} to a new text component from " "
+					set {_m::6} to a new text component from "&7&n職業&r"
+					set click event of {_m::6} to a new click event to suggest command "/guild set rights"
+					set hover event of {_m::6} to a new hover event showing "指定プレイヤーの職業を変更します。%nl%クリックして表示されるコマンドに続いて，対象者のIDと設定したい職業IDを入力してください。"
+					set {_m::7} to a new text component from " ） &r 値の加算（"
+					set {_m::8} to a new text component from "&7&n利権値&r"
+					set click event of {_m::8} to a new click event to suggest command "/guild add rights"
+					set hover event of {_m::8} to a new hover event showing "指定プレイヤーの利権値を加算します。%nl%クリックして表示されるコマンドに続いて，対象者のIDと加算したい利権値を入力してください。"
+					set {_m::9} to a new text component from " ）"
+					set {_l} to merge components {_m::*}
+					send component {_l} to the player
+					delete {_m::*}
+					# op2行目
+					set {_m::1} to a new text component from " &7> "
+					set {_m::2} to a new text component from "&7&n統計&r"
+					set click event of {_m::2} to a new click event to run command "/guild statistics"
+					set {_m::3} to a new text component from " "
+					set {_m::4} to a new text component from "&7&n入植者情報&r"
+					set click event of {_m::4} to a new click event to suggest command "/guild status"
+					set hover event of {_m::4} to a new hover event showing "指定プレイヤーの情報を閲覧します。%nl%クリックして表示されるコマンドに続いて，対象者のIDを入力してください。"
+					set {_l} to merge components {_m::*}
+					send component {_l} to the player
+					delete {_m::*}
+				# コマンド入力者の現在の利権値を表示してあげる
+				addRights(player, 0)
+				stop
+			# 第2引数"null"→転職ウィザードの表示
+			else if {_action} is "change":
+				# 1行目
+				message "%{@guild display name}% 転職をご希望ですね。新しい職種を選んで下さい。" to the player
+				message "%{@guild display name}% 現在の%player%の職業は %jobToJp({job::%player's uuid%})% です。" to the player # 2025/3/16 ぎまっち追加 転職前に現在の職業を表示
+				# 2行目
+				set {_m::1} to a new text component from " &7> "
+				set {_m::2} to a new text component from "&a&n樵夫&r"
+				set click event of {_m::2} to a new click event to run command "/guild change lumberjack"
+				set hover event of {_m::2} to a new hover event showing "森林伐採に有利な樵夫に転職できます。"
+				set {_m::3} to a new text component from " "
+				set {_m::4} to a new text component from "&e&n土工&r"
+				set click event of {_m::4} to a new click event to run command "/guild change earthwork"
+				set hover event of {_m::4} to a new hover event showing "土木工事に有利な土工に転職できます。"
+				set {_m::5} to a new text component from " "
+				set {_m::6} to a new text component from "&9&n坑夫&r"
+				set click event of {_m::6} to a new click event to run command "/guild change miner"
+				set hover event of {_m::6} to a new hover event showing "石材採掘に有利な坑夫に転職できます。"
+				set {_m::7} to a new text component from " "
+				set {_m::8} to a new text component from "&b&n左官&r"
+				set click event of {_m::8} to a new click event to run command "/guild change plasterwork"
+				set hover event of {_m::8} to a new hover event showing "高級建材生産に有利な左官に転職できます。"
+				set {_m::9} to a new text component from " "
+				set {_m::10} to a new text component from "&7&n無職&r"
+				set click event of {_m::10} to a new click event to run command "/guild change"
+				set hover event of {_m::10} to a new hover event showing "無職になります。特にいいことはありません。"
+				set {_l} to merge components {_m::*}
+				send component {_l} to the player
+				delete {_m::*}
+				stop
+			# 第2引数"help"→ヘルプウィザードの表示
+			else if {_action} is "help":
+				# 1行目
+				message "%{@guild display name}% 職業や利権について，何をお知りになりたいですか。" to the player
+				message "%{@guild display name}% 現在の%player%の職業は %jobToJp({job::%player's uuid%})% です。" to the player # 2025/3/16 ぎまっち追加 転職前に現在の職業を表示
+				# 2行目
+				set {_m::1} to a new text component from " &7> "
+				set {_m::2} to a new text component from "&b&n職業・利権システムの概要を知りたい&r"
+				set click event of {_m::2} to a new click event to run command "/guild help"
+				set {_l} to merge components {_m::*}
+				send component {_l} to the player
+				delete {_m::*}
+				# 3行目
+				set {_m::1} to a new text component from " &7> "
+				set {_m::2} to a new text component from "&b&n樵夫という職業について知りたい&r"
+				set click event of {_m::2} to a new click event to run command "/guild help lumberjack"
+				set {_l} to merge components {_m::*}
+				send component {_l} to the player
+				delete {_m::*}
+				# 4行目
+				set {_m::1} to a new text component from " &7> "
+				set {_m::2} to a new text component from "&b&n土工という職業について知りたい&r"
+				set click event of {_m::2} to a new click event to run command "/guild help earthwork"
+				set {_l} to merge components {_m::*}
+				send component {_l} to the player
+				delete {_m::*}
+				# 5行目
+				set {_m::1} to a new text component from " &7> "
+				set {_m::2} to a new text component from "&b&n坑夫という職業について知りたい&r"
+				set click event of {_m::2} to a new click event to run command "/guild help miner"
+				set {_l} to merge components {_m::*}
+				send component {_l} to the player
+				delete {_m::*}
+				# 6行目
+				set {_m::1} to a new text component from " &7> "
+				set {_m::2} to a new text component from "&b&n左官という職業について知りたい&r"
+				set click event of {_m::2} to a new click event to run command "/guild help plasterwork"
+				set {_l} to merge components {_m::*}
+				send component {_l} to the player
+				delete {_m::*}
+				stop
+		# 第1引数"change"→職を変更◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇
+		else if {_order} is "change":
+			set {_job} to arg-2
+			set {_isChange} to false			# ▼前回の転職から30日経っていない場合は，キャンセル
+			set {_today} to floor(unix timestamp of now / 86400)	# 本日を求める
+			if {lastJobChangeDay::%the player's uuid%} is not set:				# もし，ジョブチェンジ日の記録がなかった場合は，本日の日付を記録する。
+				set {lastJobChangeDay::%the player's uuid%} to 0
+			set {_diff} to {_today} - {lastJobChangeDay::%the player's uuid%}	# 最終ジョブチェンジ日と本日との日数差を求める
+			if {_diff} < 30:	# 最終ジョブチェンジ日から30日経っていない場合，
+				message "%{@guild display name}% &4転職は，前回の転職から30日以上が経過する必要があります&r。" to the player
+				exit
+			set {_r} to setJob(player, {_job})
+			message "%{@guild display name}% あなたの職業を %jobToJp({_r})% に設定しました。" to the player
+			set {lastJobChangeDay::%the player's uuid%} to {_today}		# 本日の日付を記録する。
+			exit
+		# 第1引数"help"→ヘルプを表示◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆
+		else if {_order} is "help":
+			set {_job} to arg-2
+			if {_job} is "lumberjack":
+				message "%{@guild display name}% 職業「樵夫」についてご説明します。" to the player
+				message " &8・&r 当職に就くと，いわゆる「CutAll」を使用できます。" to the player
+				message "  斧で原木を破壊することで，1本の木をまるごと伐採できます。" to the player
+				set {_pjrl} to {@per job rights lumberjack}
+				message " &8・&r CutAll機能を利用するごとに，利権値が &c%{_pjrl}%&r 消費されます。" to the player
+			else if {_job} is "earthwork":
+				message "%{@guild display name}% 職業「土工」についてご説明します。" to the player
+				message " &8・&r 当職に就くと，シャベルで採集できる土砂採集量がx4になります。" to the player
+				set {_pjre} to {@per job rights earthwork}
+				message " &8・&r 利権を利用するごとに，利権値が &c%{_pjre}%&r 消費されます。" to the player
+			else if {_job} is "miner":
+				message "%{@guild display name}% 職業「坑夫」についてご説明します。" to the player
+				message " &8・&r 当職に就くと，ツルハシで採集できる石材採集量がx4になります。" to the player
+				set {_pjrm} to {@per job rights miner}
+				message " &8・&r 利権を利用するごとに，利権値が &c%{_pjrm}%&r 消費されます。" to the player
+			else if {_job} is "plasterwork":
+				message "%{@guild display name}% 職業「左官」についてご説明します。" to the player
+				message " &8・&r 当職に就くと，ツルハシで採集できるテラコッタとコンクリートがx3になります。" to the player
+				set {_pjrp} to {@per job rights plasterwork}
+				message " &8・&r 利権を利用するごとに，利権値が &c%{_pjrp}%&r 消費されます。" to the player
+			else:
+				message "%{@guild display name}% 職業システムについてご説明します。" to the player
+				message " &8・&r 当システムは，資源採集の高速化を実現するものです。" to the player
+				message " &8・&r 職業は「樵夫&7（lumberjack）&r」，「土工&7（earthwork）&r」" to the player
+				message "  「坑夫&7（miner）&r」「左官&7（plasterwork）&r」の4つがございます。" to the player
+				message "  詳しくはコマンド &l/guild help <職業ID>&r をご入力ください。" to the player
+				message " &8・&r 建材採集時に発動する特殊技を &l&b利権&r と称します。" to the player
+				message "  利権を利用すると，一定の &l&b利権値&r を消費します。" to the player
+				set {_jrd} to {@job rights on day}
+				set {_mjr} to {@max job rights}
+				message "  利権は日ごとに &a%{_jrd}%&r ずつ補充され，最大 &a%{_mjr}%&r まで貯まります。" to the player
+				message "  現在のあなたの利権値は &a%{jobRights::%the player's uuid%}%&r です。" to the player
+				message " &8・&r 転職には，コマンド &l/guild change <職業ID>&r を入力します。" to the player
+				message "  一度転職したあとは，&430日間は転職ができません&rのでご注意ください。" to the player
+				# ▼日数差計算
+				set {_today} to floor(unix timestamp of now / 86400)	# 本日を求める
+				if {lastJobChangeDay::%the player's uuid%} is not set:				# もし，ジョブチェンジ日の記録がなかった場合は，本日の日付を記録する。
+					set {lastJobChangeDay::%the player's uuid%} to 0
+				set {_diff} to {_today} - {lastJobChangeDay::%the player's uuid%}	# 最終ジョブチェンジ日と本日との日数差を求める
+				# ▲
+				message "  &7（前回あなたが転職してから &a%{_diff}%日&7 が経過しています）" to the player
+			# ここから下は，どんなヘルプでも必ず最後に表示する
+			set {_m::1} to a new text component from "%{@guild display name}% 他にご質問はございますか？ "
+			set {_m::2} to a new text component from "&b&n質問したい&r"
+			set click event of {_m::2} to a new click event to run command "/guild wizard help"
+			set {_m::3} to a new text component from " "
+			set {_m::4} to a new text component from "&b&nとくにない&r"
+			set click event of {_m::4} to a new click event to run command "/guild wizard"
+			set {_l} to merge components {_m::*}
+			send component {_l} to the player
+			delete {_m::*}
+		# 第1引数"rights"→利権使用のON・OFF◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◆◇◆◇◆◇◆◇◆◇◆◇
+		else if {_order} is "rights":
+			set {_b} to arg-2
+			if {_b} is "yes" or "true":
+				set {jobValid::%the player's uuid%} to true
+			else if {_b} is "no" or "false":
+				set {jobValid::%the player's uuid%} to false
+			else:
+				if {jobValid::%the player's uuid%} is true:
+					set {jobValid::%the player's uuid%} to false
+				else:
+					set {jobValid::%the player's uuid%} to true
+			# メッセージ
+			if {jobValid::%the player's uuid%} is true:
+				message "%{@guild display name}% 職業利権を &e&lON&r にしました。" to the player
+			else:
+				message "%{@guild display name}% 職業利権を &e&lOFF&r にしました。" to the player
+		# 第1引数"trade"→各種の交易画面を開く◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◆◇◆◇◆◇◆◇◆◇◆
+		else if {_order} is "trade":
+			set {_type} to arg-2
+			showTrade(player, {_type})
+		# 第1引数"set"→さまざまな値をセット(OP専用)◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◆◇◆◇◆◇◆◇
+		else if {_order} is "set":
+			# 条件チェック
+			player is op
+			# 本処理
+			set {_v} to arg-2	# 変更したい変数の名前。「day」「rights（利権値）」「job（職業）」のみ許可される。
+			set {_p} to arg-3 parsed as offlineplayers	# 変更されるプレイヤーのID
+			# 前回に仕事を変更した日を変更
+			if {_v} is "day":
+				set {_a} to arg-4 parsed as number
+				if {_p} is "all":
+					loop all offlineplayers:
+						setLastJobChangeDay(loop-value, {_a})
+					message "%{@guild display name}% 全員の最終転職日を %{_r}% に設定しました。" to the player
+				else:
+					set {_r} to setLastJobChangeDay({_p}, {_a})
+					message "%{@guild display name}% %{_p}%の最終転職日を %{_r}% に設定しました。" to the player
+			# 利権値を変更
+			else if {_v} is "rights":
+				set {_a} to arg-4 parsed as number
+				if {_p} is "all":
+					loop all offlineplayers:
+						set {_r} to setRights(loop-value, {_a})
+					message "%{@guild display name}% 全員の利権値を %{_r}% に設定しました。" to the player
+				else:
+					set {_r} to setRights({_p}, {_a})
+					message "%{@guild display name}% %{_p}%の利権値を %{_r}% に設定しました。" to the player
+			# 職業を変更
+			else if {_v} is "job":
+				set {_a} to arg-4
+				set {_r} to setJob({_p}, {_a})
+				message "%{@guild display name}% %{_p}%の職業を %jobToJp({_r})% に設定しました。" to the player
+			# 無効な指示
+			else:
+				message "%{@guild display name}% 変更したい値の指定が無効です。" to the player
+		# 第1引数"add"→さまざまな値を加算(OP専用)◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◆◇◆◇◆◇◆◇◆
+		else if {_order} is "add":
+			# 条件チェック
+			player is op
+			# 本処理
+			set {_v} to arg-2	# 変更したい変数の名前。「day」「rights（利権値）」「job（職業）」のみ許可される。
+			set {_p} to arg-3 parsed as offlineplayers	# 変更されるプレイヤーのID
+			# 利権値を加算
+			if {_v} is "rights":
+				set {_a} to arg-4 parsed as number
+				if {_p} is "all":
+					loop all offlineplayers:
+						addRightsOnBackground(loop-value, {_a})
+					message "%{@guild display name}% 全員の利権値に %{_a}% を加算しました。" to the player
+				else:
+					set {_r} to addRightsOnBackground({_p}, {_a})
+					message "%{@guild display name}% %{_p}%の利権値に %{_a}% を加算して %{_r}% になりました。" to the player
+		# 第1引数"statistics"→統計を見る(OP専用)◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◆◇◆◇◆◇◆◇◆◇
+		else if {_order} is "statistics":
+			# 条件チェック
+			player is op
+			# 本処理
+			message "%{@guild display name}% 統計を表示します。" to the player
+			# {job::*}を回して，
+			setJobStatistics()
+			message " &7>&r アクティブ入植者数 %{jobActive::all}% 名" to the player
+			message " &7>&r ・うち樵夫 %{jobActive::lumberjack}% 名（%round({jobRatio::lumberjack}*100)%％）" to the player
+			message " &7>&r ・うち土工 %{jobActive::earthwork}% 名（%round({jobRatio::earthwork}*100)%％）" to the player
+			message " &7>&r ・うち坑夫 %{jobActive::miner}% 名（%round({jobRatio::miner}*100)%％）" to the player
+			message " &7>&r ・うち左官 %{jobActive::plasterwork}% 名（%round({jobRatio::plasterwork}*100)%％）" to the player
+			message " &7>&r ・うち無職 %{jobActive::unemployed}% 名（%round({jobRatio::unemployed}*100)%％）" to the player
+		# 第1引数"status"→プレイヤーの情報を見る(OP専用)◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◆◇◆◇◆◇◆
+		else if {_order} is "status":
+			# 条件チェック
+			player is op
+			set {_p} to arg-2 parsed as offlineplayer
+			getJobStatus({_p}, player)
+
+
+
+
+# ◇■◇あるプレイヤーの職業利権に関する情報を得る◇■◇
+# 《引数》情報を引き出したいプレイヤーのID
+# 《返り値》なし
+function getJobStatus(p: offlineplayer, s: player):
+	set {_today} to floor(unix timestamp of now / 86400)				# 本日（1970/1/1＝0とする）
+	set {_uuid} to {_p}'s uuid											# プレイヤーのUUID
+	set {_lastLogIn} to {_today} - {lastLogInDayG::%{_uuid}%}			# プレイヤーが何日前にログインしたか
+	set {_lastChange} to {_today} - {lastJobChangeDay::%{_uuid}%}		# プレイヤーが何日前に転職したか
+	# ログインが30日以上遠ざかっているときは「非アクティブアカウント」とする
+	if {_lastLogIn} <= 30:
+		set {_active} to true
+		set {_activeJ} to "アクティブ"
+	else:
+		set {_active} to false
+		set {_activeJ} to "非アクティブ"
+	set {_name} to {_p}							# プレイヤーのID名
+	set {_job} to {job::%{_uuid}%}						# プレイヤーの職業
+	set {_rights} to {jobRights::%{_uuid}%}				# プレイヤーの保持利権値
+	set {_valid} to {jobValid::%{_uuid}%}				# プレイヤーの利権使用スイッチ
+	# 返り値にデータを放り込んでいく
+	message "%{@guild display name}% %{_name}%（%{_activeJ}%）..." to {_s}
+	message " &7>&r &n職業&r:%{_job}% &n保持利権値&r:%{_rights}% &nログイン&r:%{_lastLogIn}%日前 &n転職&r:%{_lastChange}%日前 &n利権スイッチ&r:%{_valid}%" to {_s}
+
+
+
+
+
+# ◇■◇仕事・利権に関する統計を更新する◇■◇
+# 《引数》なし
+# 《返り値》なし
+function setJobStatistics():
+	# 返り値の準備
+	set {jobActive::all} to 0				# アクティブなアカウント数
+	set {jobActive::lumberjack} to 0		# アクティブな樵夫の数
+	set {jobActive::earthwork} to 0			# アクティブな土工の数
+	set {jobActive::miner} to 0				# アクティブな坑夫の数
+	set {jobActive::plasterwork} to 0		# アクティブな左官の数
+	set {jobActive::unemployed} to 0		# アクティブな無職の数
+	# すべてのプレイヤーを回す
+	loop all offlineplayers:
+		continue if loop-value is banned	# BANされた人は統計情報に含めない
+		transPlayerJobData(loop-value)		# 旧データを新データに移行
+		set {_today} to floor(unix timestamp of now / 86400)				# 本日（1970/1/1＝0とする）
+		set {_uuid} to loop-value's uuid									# プレイヤーのUUID
+		set {_lastLogIn} to {_today} - {lastLogInDayG::%{_uuid}%}			# プレイヤーが何日前にログインしたか
+		#set {_lastChange} to {_today} - {lastJobChangeDay::%{_uuid}%}		# プレイヤーが何日前に転職したか
+		# ログインが30日以上遠ざかっているときは「非アクティブアカウント」とする
+		if {_lastLogIn} <= 30:
+			set {_active} to true
+			set {_activeJ} to "アクティブ"
+		else:
+			set {_active} to false
+			set {_activeJ} to "非アクティブ"
+		continue if {_active} is false		# 非アクティブユーザーは統計から外す
+		set {_name} to loop-value							# プレイヤーのID名
+		#set {_dName} to loop-value's display name			# プレイヤーの表示名
+		set {_job} to {job::%{_uuid}%}						# プレイヤーの職業
+		#set {_rights} to {jobRights::%{_uuid}%}			# プレイヤーの保持利権値
+		#set {_valid} to {jobValid::%{_uuid}%}				# プレイヤーの利権使用スイッチ
+		# 返り値にデータを放り込んでいく
+		add 1 to {jobActive::all}		# アクティブなアカウント数を1加算
+		if {_job} is "lumberjack":			# 樵夫ならば，その数を増やし，IDリストに追加
+			add 1 to {jobActive::lumberjack}
+			add {_name} to {_jl::*}
+		if {_job} is "earthwork":			# 土工ならば，その数を増やし，IDリストに追加
+			add 1 to {jobActive::earthwork}
+			add {_name} to {je::*}
+		if {_job} is "miner":				# 坑夫ならば，その数を増やし，IDリストに追加
+			add 1 to {jobActive::miner}
+			add {_name} to {jm::*}
+		if {_job} is "plasterwork":			# 左官ならば，その数を増やし，IDリストに追加
+			add 1 to {jobActive::plasterwork}
+			add {_name} to {jp::*}
+		if {_job} is "unemployed":			# 無職ならば，その数を増やし，IDリストに追加
+			add 1 to {jobActive::unemployed}
+			add {_name} to {ju::*}
+		# broadcast "%{@guild display name}% %{_name}%（%{_activeJ}%）..."
+		# broadcast " &7>&r &n職業&r:%{_job}% &n保持利権値&r:%{_rights}% &nログイン&r:%{_lastLogIn}%日前 &n転職&r:%{_lastChange}%日前 &n利権スイッチ&r:%{_valid}%"
+	set {jobMember::lumberjack::*} to {_jl::*}
+	set {jobMember::earthwork::*} to {_je::*}
+	set {jobMember::miner::*} to {_jm::*}
+	set {jobMember::plasterwork::*} to {_jp::*}
+	set {jobMember::unemployed::*} to {_ju::*}
+	set {jobRatio::lumberjack} to {jobActive::lumberjack} / {jobActive::all}
+	set {jobRatio::earthwork} to {jobActive::earthwork} / {jobActive::all}
+	set {jobRatio::miner} to {jobActive::miner} / {jobActive::all}
+	set {jobRatio::plasterwork} to {jobActive::plasterwork} / {jobActive::all}
+	set {jobRatio::unemployed} to {jobActive::unemployed} / {jobActive::all}
+
+
+# ◇■◇旧データを新データに移行◇■◇
+# 《引数》なし
+# 《返り値》なし
+function transPlayerJobData(player: offlineplayer):
+	set {_uuid} to {_player}'s uuid
+	# 転職日の移行。
+	if {lastJobChangeDay.%{_player}%} is set:
+		set {lastJobChangeDay::%{_uuid}%} to {lastJobChangeDay.%{_player}%}
+		delete {lastJobChangeDay.%{_player}%}
+		#message "%{@guild display name}% &e変数「最終転職日」を，新変数に移行しました。" to the player
+	# 利権値の移行。
+	if {jobRights.%{_player}%} is set:
+		set {jobRights::%{_uuid}%} to {jobRights.%{_player}%} * 100
+		delete {jobRights.%{_player}%}
+		#message "%{@guild display name}% &e変数「利権値」を，新変数に移行しました。" to the player
+	# 利権使用スイッチの移行。
+	if {jobValid.%{_player}%} is set:
+		set {jobValid::%{_uuid}%} to {jobValid.%{_player}%}
+		delete {jobValid.%{_player}%}
+		#message "%{@guild display name}% &e変数「利権有効化スイッチ」を，新変数に移行しました。" to the player
+	# 職業の移行。
+	if {job.%{_player}%} is set:
+		set {job::%{_uuid}%} to {job.%{_player}%}
+		delete {job.%{_player}%}
+		#message "%{@guild display name}% &e変数「職業」を，新変数に移行しました。" to the player
+	# 最終ログイン日の移行。
+	if {lastLogInDayG.%{_player}%} is set:
+		set {lastLogInDayG::%{_uuid}%} to {lastLogInDayG.%{_player}%}
+		delete {lastLogInDayG.%{_player}%}
+
+
+
+
+
+# ◇■◇ログイン時，念のためパーミッション自動設定 ＋ 1日ごとに利権を補充◇■◇
+on join:
+	# 旧データを新データに移行
+	# パーミッションを変更
+	changeJobPermission(player)
+	# 本日を求める
+	set {_today} to floor(unix timestamp of now / 86400)
+	# もし，ログインプレイヤーの最終ログイン日の記録がなかった場合は，本日の日付を記録する。
+	if {lastLogInDayG::%the player's uuid%} is not set:
+		set {lastLogInDayG::%the player's uuid%} to {_today}
+	# 最終ログイン日と本日との日数差を求める
+	set {_diff} to {_today} - {lastLogInDayG::%the player's uuid%}
+	# 本日の日付を記録する。
+	set {lastLogInDayG::%the player's uuid%} to {_today}
+	# 日数差が1日以上あり，かつプレイヤーが給付上限利権値を持たない場合，利権値を給付
+	if {_diff} >= 1:
+		{jobRights::%the player's uuid%} <= {@max job rights}
+		set {_sum days} to min({_diff}, {@days max G})									# 何日分の給付を行うか，その日数を求める
+		set {_handout max} to {@max job rights} - {jobRights::%the player's uuid%}		# 給付上限プレイヤーの現利権値を求める
+		set {_sum handout} to min({_sum days} * {@job rights on day}, {_handout max}) 	# 給付利権値の最大値を求める
+		add {_sum handout} to {jobRights::%the player's uuid%}							# 給付実施
+		addRights(player, {_sum handout})
+		message "%{@guild display name}% 利権値を &a%{_sum handout}%&r 給付しました。" to player
+	addRights(player, 0)	# 起動時は利権値を見せる
+
+	# ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !
+	#臨時：最終転職日を1970/1/0にする。===============================================================================================================================================================================================
+	#2024/04/12 バージョンアップに伴い、デバッグもかねて、自由に転職できるようにしたもの
+	#後で戻すこと
+	set {lastJobChangeDay::%the player's uuid%} to 0
+	#=================================================================================================================================================================================================================================
+
+
+# ◇■◇職業ごとの利権を設定（樵夫以外）◇■◇
+
+# 土工がショベルで対象ブロックを掘った場合
+on break of digdig:
+	# 条件チェック
+	the player's gamemode is survival
+	the player has permission "sakuraft.earthwork"
+	the player's tool is any shovel
+	{jobRights::%the player's uuid%} >= {@per job rights earthwork}
+	{jobValid::%the player's uuid%} = true
+	# 本処理
+	#set {_x1} to (rounded down (x-loc of event-location / 16)) * 16
+	#set {_x2} to {_x1} + 15
+	#set {_y}  to rounded down (y-loc of event-location)
+	#set {_z1} to (rounded down (z-loc of event-location / 16)) * 16
+	#set {_z2} to {_z1} + 15
+	#message "(%{_x1}% - %{_x2}%), %{_y}%, (%{_z1}% - %{_z2}%)" to the player
+	#loop blocks within location({_x1},{_y},{_z1}) and location({_x2},{_y},{_z2}):
+	#	if past event-block's blockdata = loop-block's blockdata:
+	#		set {_up} to the block 1 meter above the loop-block
+	#		message {_up}'s blockdata
+	#		if "%{_up}'s blockdata%" = "minecraft:air":
+	# 旧処理
+	drop 3 of (the drops of event-block)							# 合わせて通常の4倍量ドロップ
+	addRights(player, -1 * {@per job rights earthwork})
+	#remove {@per job rights earthwork} from {jobRights::%the player's uuid%}	# 利権を削る
+	#send action bar "&l利権残り&r &a%{jobRights::%the player's uuid%}%&r / 1000" to player
+
+
+# 土工がつるはしで対象ブロックを掘った場合
+on break of digdigpick:
+	# 条件チェック
+	the player's gamemode is survival
+	the player has permission "sakuraft.earthwork"
+	the player's tool is any pickaxe
+	{jobRights::%the player's uuid%} >= {@per job rights earthwork}
+	{jobValid::%the player's uuid%} = true
+	# 本処理
+	drop 3 of (the drops of event-block)							# 合わせて通常の4倍量ドロップ
+	addRights(player, -1 * {@per job rights earthwork})
+	#remove {@per job rights earthwork} from {jobRights::%the player's uuid%}	# 利権を削る
+	#send action bar "&l利権残り&r &a%{jobRights::%the player's uuid%}%&r / 1000" to player
+
+
+# 坑夫がショベルで対象ブロックを掘った場合
+on break of minemine:
+	# 条件チェック
+	the player's gamemode is survival
+	the player has permission "sakuraft.miner"
+	the player's tool is any pickaxe
+	{jobRights::%the player's uuid%} >= {@per job rights miner}
+	{jobValid::%the player's uuid%} = true
+	# 本処理
+	drop 3 of (the drops of event-block)						# 合わせて通常の4倍量ドロップ
+	addRights(player, -1 * {@per job rights miner})
+	#remove {@per job rights miner} from {jobRights::%the player's uuid%}	# 利権を削る
+	#send action bar "&l利権残り&r &a%{jobRights::%the player's uuid%}%&r / 1000" to player
+
+
+# 左官がショベルで対象ブロックを掘った場合
+on break of plastplast:
+	# 条件チェック
+	the player's gamemode is survival
+	the player has permission "sakuraft.plasterwork"
+	the player's tool is any pickaxe
+	{jobRights::%the player's uuid%} >= {@per job rights plasterwork}
+	{jobValid::%the player's uuid%} = true
+	# 本処理
+	drop 2 of (the drops of event-block)						# 合わせて通常の3倍量ドロップ
+	addRights(player, -1 * {@per job rights plasterwork})
+	#remove {@per job rights plasterwork} from {jobRights::%the player's uuid%}	# 利権を削る
+	#send action bar "&l利権残り&r &a%{jobRights::%the player's uuid%}%&r / 1000" to player
+
+
+
+# ◇■◇樵夫の利権を設定（CutAll）◇■◇
+
+# 葉っぱをとる
+function cutleave(l: location):
+	loop blocks in radius 4 around {_l}:
+		if loop-block is leaves:
+			set block at loop-block to air
+			#play raw sound "dig.grass" at loop-block with pitch 0.8 volume 10
+
+#
+function cutByLumberjack(l: location, p: player):
+	loop blocks in radius 2 around {_l}:
+		# 当該ブロックが原木だった場合...
+		if loop-block is cutcut:
+			break loop-block using {_p}'s tool		# 手持ちの斧で原木を切ったことにする
+			wait 1 tick
+			cutByLumberjack(loop-block, {_p})
+			#cutleave(loop-block)
+
+on break of cutcut:
+	# 条件チェック
+	the player's gamemode is survival
+	the player has permission "sakuraft.lumberjack"
+	the player's tool is any axe
+	the player is sneaking
+	{jobRights::%the player's uuid%} >= {@per job rights lumberjack}
+	{jobValid::%the player's uuid%} = true
+	# 本処理
+	damage player's tool by 8			# 手持ちの斧にダメージを8与える
+	set {_nokori} to (maximum durability of player's tool) - (player's tool's damage)
+	# 斧の耐久値がゼロになっている場合...
+	if {_nokori} < 1:
+		remove player's tool from player	# 斧を破壊
+	addRights(player, -1 * {@per job rights lumberjack})
+	#remove {@per job rights lumberjack} from {jobRights::%the player's uuid%}	# 利権を削る
+	#send action bar "&l利権残り&r &a%{jobRights::%the player's uuid%}%&r / 1000" to player
+	cutByLumberjack(event-location, player)
+
+
+
+
+
+# ◇■◇交易画面の表示◇■◇
+function showTrade(p: player, t: text):
+	# コンクリートの簡易生成
+	if {_t} is "powderToConcrete":
+		if {_p} has permission "sakuraft.plasterwork":
+			set {_merchant} to new merchant named "簡易クラフト（コンクリート）"
+			# 色ループを回して，全色のコンクリートパウダーをコンクリートにするレシピを追加
+			loop any concrete:
+				set {_c} to loop-value
+				set {_r} to "64 %{_c}%" parsed as item
+				set {_a} to "64 %{_c}% powder" parsed as item
+				set {_b} to "water bucket" parsed as item
+				add getMerchantRecipe2({_r}, {_a}, {_b}) to merchant recipes of {_merchant}
+			open merchant {_merchant} to {_p}
+			set {openedMerchantType::%{_p}'s uuid%} to "powderToConcrete"
+		else:
+			message "%{@guild display name}% &4あなたは交易（コンクリート）を開く権限がありません。" to {_p}
+	# 土系ブロックの交易
+	else if {_t} is "dirtToDirt":
+		set {_rate} to 4
+		if {_p} has permission "sakuraft.earthwork":
+			set {_rate} to 3
+		set {_merchant} to new merchant named "交易（土系ブロック）"
+		# 次のリストにあるアイテム同士を相互交易できるように
+		set {_tradeList::*} to dirt, gravel, sand and red sand
+		loop {_tradeList::*}:
+			loop {_tradeList::*}:
+				if loop-value-1 = loop-value-2:
+					continue
+				add getMerchantRecipe(loop-value-1, "%{_rate}% %loop-value-2%" parsed as item) to merchant recipes of {_merchant}
+		open merchant {_merchant} to {_p}
+		set {openedMerchantType::%{_p}'s uuid%} to "dirtToDirt"
+	else:
+		message "%{@guild display name}% &4交易の種類を指定する引数が不正です。" to {_p}
+
+
+# ひとつの商人との取引内容を生成して返す（差し出すアイテムは1種類）
+function getMerchantRecipe(r: item, a: item):: merchant recipe:
+	set {_trade} to new merchant recipe with result {_r} with max uses 100000
+	set ingredients of merchant recipe {_trade} to {_a}
+	return {_trade}
+	
+	
+# ひとつの商人との取引内容を生成して返す（差し出すアイテムは2種類）
+function getMerchantRecipe2(r: item, a: item, b: item):: merchant recipe:
+	set {_trade} to new merchant recipe with result {_r} with max uses 100000
+	set ingredients of merchant recipe {_trade} to {_a} and {_b}
+	return {_trade}
+
+
+# 取引成立時に既定の利権値を没収したりする。
+# ・利権値が足りていなければ，イベントはキャンセルされる（交易不能）
+# ・コンクリートの簡易生成については，ガラス瓶を返却してやる
+on player purchase:
+	set {_type} to {openedMerchantType::%player's uuid%}
+	set {_rights} to {jobRights::%the player's uuid%}
+	if {_type} is "powderToConcrete":	# コンクリートの簡易生成
+		set {_required} to {@per rights generate plasterwork}
+	else:
+		set {_required} to 0
+	if {_rights} < {_required}:
+		cancel the event
+	addRights(player, -1 * {_required})
+	if {_type} is "powderToConcrete":	# ガラス瓶の返却（コンクリートの簡易生成）
+		give or drop a bucket to the player
+
+
+# インベントリ（交易画面）を閉じたときには，開いている交易の種類を記録する変数を空にする
+on inventory close:
+	set {openedMerchantType::%player's uuid%} to ""
+
+
+
+# ＝＝＝ユーティリティ＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+# ◇■◇利権値の増減◇■◇
+function addRights(p: player, a: number):
+	# 利権値をセットする。上限を超えたら上限値に調整，下限値を下回りそうなら下限値に調整
+	set {_changed} to {jobRights::%{_p}'s uuid%} + {_a}
+	if {_changed} < 0:
+		set {_changed} to 0
+	if {_changed} > {@max job rights}:
+		set {_changed} to {@max job rights}
+	set {jobRights::%{_p}'s uuid%} to {_changed}
+	# ボスバーの作成
+	set {_mjr} to {@max job rights}
+	delete boss bar with id "rights_%{_p}'s uuid%"																				# skBee（前のは消す）
+	set {_jobJp} to jobToJp({job::%{_p}'s uuid%})
+	set {_bossbar} to boss bar with id "rights_%{_p}'s uuid%" with title "【%{_jobJp}%】 利権値 %{_changed}% / %{_mjr}%" with color yellow		# skBee
+	set bar style of {_bossbar} to segmented_20																					# skBee
+	set bar progress of {_bossbar} to round({_changed} / {_mjr} * 100)															# skBee
+	add {_p} to {_bossbar}																										# skBee
+	# 5秒待つ
+	wait 5 seconds
+	# 現在の利権値と，記憶してた利権値が合っていれば，ボスバーを消す
+	if {_changed} = {jobRights::%{_p}'s uuid%}:
+		delete boss bar with id "rights_%{_p}'s uuid%"	# skBee
+
+
+
+# ◇■◇前回に仕事を変更した日を変更◇■◇
+# 《引数》
+#   p: 転職日を変更するプレイヤー名
+#   a: 1970年1月1日を0とする転職日
+# 《返り値》変更後の転職日を返す
+function setLastJobChangeDay(p: offlineplayer, a: number):: number:
+	set {_i} to {_p}'s uuid
+	set {lastJobChangeDay::%{_i}%} to {_a}
+	#message "%{@guild display name}% %{_p}%の最終転職日を %{_a}% に設定しました。" to the player
+	return {_a}
+
+
+
+# ◇■◇利権値を変更◇■◇
+# 《引数》
+#   p: 利権値を変更するプレイヤー名
+#   a: 利権値
+#    ・最大値を上回る指定をすると，最大値を設定する
+#    ・最小値（ゼロ）を下回る指定をすると，最小値（ゼロ）を設定する
+# 《返り値》変更後の利権値を返す
+function setRights(p: offlineplayer, a: number):: number:
+	set {_i} to {_p}'s uuid
+	if {_a} < 0:
+		set {_a} to 0
+	else if {_a} > {@max job rights}:
+		set {_a} to {@max job rights}
+	set {jobRights::%{_i}%} to {_a}
+	#message "%{@guild display name}% %{_p}%の利権値を %{_a}% に設定しました。" to the player
+	return {_a}
+
+
+
+# ◇■◇即時に利権値を加算◇■◇
+# ・負の値を指定すると，その絶対値ぶんだけ減算する
+# 《引数》
+#   p: 利権値を加算するプレイヤー名
+#   a: 加算したい利権値
+#    ・負の値を指定すると，その絶対値ぶんだけ減算する
+# 《返り値》変更後の利権値を返す
+function addRightsOnBackground(p: offlineplayer, a: number):: number:
+	set {_i} to {_p}'s uuid
+	set {_rightsBefore} to {jobRights::%{_i}%}
+	return setRights({_p}, {_rightsBefore} + {_a})
+
+
+
+# ◇■◇職業を変更◇■◇
+# ・職業が変更されると，自動的にパーミッション周りも変更される
+# 《引数》
+#   p: 職業を変更するプレイヤー名
+#   a: 変更したい職業をIDで指定
+#    ・無効な値を指定すると，無職を設定して返す
+# 《返り値》変更された職業の値
+function setJob(p: offlineplayer, a: text):: text:
+	set {_i} to {_p}'s uuid
+	if {_a} is "lumberjack":			# 樵夫
+		set {job::%{_i}%} to "lumberjack"
+		set {_r} to "lumberjack"
+	else if {_a} is "earthwork":		# 土工
+		set {job::%{_i}%} to "earthwork"
+		set {_r} to "earthwork"
+	else if {_a} is "miner":			# 坑夫
+		set {job::%{_i}%} to "miner"
+		set {_r} to "miner"
+	else if {_a} is "plasterwork":		# 左官
+		set {job::%{_i}%} to "plasterwork"
+		set {_r} to "plasterwork"
+	else:								# 無職
+		set {job::%{_i}%} to "unemployed"
+		set {_r} to "unemployed"
+	changeJobPermission({_p})
+	return {_r}
+
+
+
+# ◇■◇パーミッションの切り替え◇■◇
+function changeJobPermission(player: offlineplayer):
+	set {_job} to {job::%{_player}'s uuid%}
+	if {_job} is "lumberjack":
+		execute console command "/lp user %{_player}% permission set sakuraft.lumberjack true"
+		execute console command "/lp user %{_player}% permission set sakuraft.earthwork false"
+		execute console command "/lp user %{_player}% permission set sakuraft.miner false"
+		execute console command "/lp user %{_player}% permission set sakuraft.plasterwork false"
+	else if {_job} is "earthwork":
+		execute console command "/lp user %{_player}% permission set sakuraft.lumberjack false"
+		execute console command "/lp user %{_player}% permission set sakuraft.earthwork true"
+		execute console command "/lp user %{_player}% permission set sakuraft.miner false"
+		execute console command "/lp user %{_player}% permission set sakuraft.plasterwork false"
+	else if {_job} is "miner":
+		execute console command "/lp user %{_player}% permission set sakuraft.lumberjack false"
+		execute console command "/lp user %{_player}% permission set sakuraft.earthwork false"
+		execute console command "/lp user %{_player}% permission set sakuraft.miner true"
+		execute console command "/lp user %{_player}% permission set sakuraft.plasterwork false"
+	else if {_job} is "plasterwork":
+		execute console command "/lp user %{_player}% permission set sakuraft.lumberjack false"
+		execute console command "/lp user %{_player}% permission set sakuraft.earthwork false"
+		execute console command "/lp user %{_player}% permission set sakuraft.miner false"
+		execute console command "/lp user %{_player}% permission set sakuraft.plasterwork true"
+	else:
+		execute console command "/lp user %{_player}% permission set sakuraft.lumberjack false"
+		execute console command "/lp user %{_player}% permission set sakuraft.earthwork false"
+		execute console command "/lp user %{_player}% permission set sakuraft.miner false"
+		execute console command "/lp user %{_player}% permission set sakuraft.plasterwork false"
+
+
+
+# ◇■◇職業IDから職業日本語名を返す◇■◇
+function jobToJp(id: text):: text:
+	if {_id} is "lumberjack":
+		set {_result} to "樵夫"
+	else if {_id} is "earthwork":
+		set {_result} to "土工"
+	else if {_id} is "miner":
+		set {_result} to "坑夫"
+	else if {_id} is "plasterwork":
+		set {_result} to "左官"
+	else:
+		set {_result} to "無職"
+	return {_result}
+
+
+
+
+

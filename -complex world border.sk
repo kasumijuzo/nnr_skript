@@ -1,0 +1,98 @@
+# 世界の端を細かく制御する（v2）
+# ・複雑な「世界の端」を制御する（v1～）
+# ・通常ディメンション⇔ネザーの行き来を制御・制限する（v2～）
+
+
+
+
+# 0.5秒ごとに全プレイヤーの居場所をチェックする
+# ・マップの範囲外に出たプレイヤーは，前回チェックを受けた場所へ強制的にワープ
+every 10 ticks:
+	loop all players:
+		# 対象プレイヤーがすでに死亡中の場合は，この処理を飛ばす
+		if loop-player is dead:
+			continue loop
+		# 対象プレイヤーが通常ディメンションにいない場合は，所在地は記録した上で，この処理を飛ばす
+		if loop-player's world != "world":
+			set {prevLoc::%loop-player's uuid%} to loop-player's location
+			continue loop
+		# 所在チャンク座標を取得
+		set {_x} to coordToChunk(loop-player's x-coord)
+		set {_z} to coordToChunk(loop-player's z-coord)
+		# 第1国境（ニコ鉄マップ範囲）内判定とその処理
+		set {_result} to checkWithinRange({_x}, {_z}, -209, -306, 209 and 112)
+		if {_result} is true:
+			#message "範囲内" to loop-player
+			set {prevLoc::%loop-player's uuid%} to loop-player's location
+			#message "第１範囲内" to loop-player
+			continue loop
+		# 第2国境（サクラフトマップ）内判定とその処理
+		set {_result} to checkWithinRange({_x}, {_z}, 896, -288, 1279 and 127)
+		if {_result} is true:
+			#message "範囲内" to loop-player
+			set {prevLoc::%loop-player's uuid%} to loop-player's location
+			#message "第２範囲内" to loop-player
+			continue loop
+		# 第3国境（回廊部）内判定とその処理
+		set {_result} to checkWithinRange({_x}, {_z}, 210, -128, 895 and 31)
+		if {_result} is true:
+			#message "範囲内" to loop-player
+			set {prevLoc::%loop-player's uuid%} to loop-player's location
+			#message "第３範囲内" to loop-player
+			continue loop
+		# すべて判定外だったときの処理
+		show ender signal on loop-player's location
+		message "<red><b>[BorderPat.]<r> 国境に達しているため，ここから先へ行くことはできません。" to loop-player
+		damage the loop-player by 0.5 heart
+		force teleport loop-player to {prevLoc::%loop-player's uuid%}
+
+
+
+# (関数)単一の値をチャンクの値に変更して返す
+function coordToChunk(num:number) :: number:
+	return floor({_num} / 16)
+
+
+# (関数)あるチャンクが，指定された矩形の内側にあるか。
+# @param {number} px 「あるチャンク」のx座標の値
+# @param {number} py 「あるチャンク」のx座標の値
+# @param {number} xa 「指定された矩形」のうち，左上のチャンクのx座標の値
+# @param {number} za 「指定された矩形」のうち，左上のチャンクのz座標の値
+# @param {number} xb 「指定された矩形」のうち，右下のチャンクのx座標の値
+# @param {number} zb 「指定された矩形」のうち，右下のチャンクのz座標の値
+# @returm {boolean} 範囲内であればtrueを返す
+function checkWithinRange(px:number, pz:number, xa:number, za:number, xb:number, zb:number) :: boolean:
+	if {_px} is between {_xa} and {_xb}:
+		if {_pz} is between {_za} and {_zb}:
+			return true
+	return false
+
+
+
+# プレイヤーの所在ディメンションが代わったときに発動するイベント
+on player world change:
+	# 現在と直前のディメンションを記録
+	set {_prevDim} to {prevLoc::%the player's uuid%}'s world
+	set {_currDim} to the player's world
+	# もし「通常→ネザー」の移動ならば，直前にいた座標を記録
+	if {_prevDim} is "world":
+		if {_currDim} is "world_nether":
+			set {prevNormalDimLoc::%the player's uuid%} to {prevLoc::%the player's uuid%}
+	# もし「通常→ネザー」の移動ならば，通常ディメンションで最後にいた座標に強制移動
+	if {_prevDim} is "world_nether":
+		if {_currDim} is "world":
+			teleport the player to {prevNormalDimLoc::%the player's uuid%}
+
+# ネザーディメンションではネザーゲートを作れないように制限
+on portal create:
+	the player's world is "world_nether"
+	cancel the event
+
+
+
+# 通常世界⇔ネザーの行き来がうまくいかなくなったときの緊急ワープコマンド
+#command /warp:
+#	trigger:
+#		teleport the player to the location (130.5, 1, 36.5) in "world"
+
+

@@ -1,0 +1,36 @@
+# プレイヤー表示名変更スクリプト v1.1
+# ・プレイヤーの表示名を変更する
+# ・名札が必要
+
+
+command /myname <text> [<text>]:
+	description: 自身の表示名を変更したり削除したりするコマンドです
+	trigger:
+		# 名前を削除するとき（名札は必要ない）
+		if arg-1 is "remove" or "delete":
+			delete {dname.%player%}
+			reset the player's display name
+			reset the player's tablist name
+			message "§7[§4Seta court§7] §a表示名をリセットしました。"
+		if arg-1 is "set":
+			if arg-2 isn't set:
+				message "§7[§4Seta court§7] §c表示名が入力されていません。"
+				stop
+			# 名札が足りないとき
+			if player doesn't have a name tag:
+				message "§7[§4Seta court§7] §c表示名を変更できません。§r表示名の改名に必要な「名札」を所持していません。"
+			# 名札が足りているとき
+			if player has a name tag:
+				remove a name tag from player
+				set {dname.%player%} to arg-2
+				set the player's display name to arg-2
+				set the player's tablist name to arg-2
+				message "§7[§4Seta court§7] §r表示名を §a%arg-2%§r に変更しました。§6名札を1つ消費§r しました。"
+
+
+# 接続したときには，もう一度表示名をサーバーに登録し直す
+on join:
+	if {dname.%player%} exists:
+		set the player's display name to {dname.%player%}
+		set the player's tablist name to {dname.%player%}
+

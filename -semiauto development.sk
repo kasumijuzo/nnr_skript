@@ -1,0 +1,1279 @@
+# 建築支援
+# 2025/04/14 skript 2.10.2 に対応するように改造（エイリアスの追加、「on rightclick」の書式変更）
+# 2925/04/18 大きなシダ、壁掛け松明に対応
+
+variables:
+	{devLock} = false
+	{devEmergency} = false
+	{devMode::%player%} = "none"
+	{devPileLoc1::%player%} = ""
+	{devPileLoc2::%player%} = ""
+
+aliases:
+	# 各種の花(2025/04/14追加)
+	any flower = dandelion , poppy , blue_orchid , allium , azure_bluet , red_tulip , orange_tulip , Torchflower , white_tulip , pink_tulip , oxeye_daisy , cornflower , lily_of_the_valley , wither_rose , sunflower , lilac , rose_bush , peony , pitcher_plant
+	#各種のハーフブロック(2025/04/14追加)
+	any slabs = oak_slab , spruce_slab , birch_slab , jungle_slab , acacia_slab , dark_oak_slab , mangrove_slab , cherry_slab , bamboo_slab , bamboo_mosaic_slab , crimson_slab , warped_slab , stone_slab , smooth_stone_slab , granite_slab , polished_granite_slab , diorite_slab , polished_diorite_slab , andesite_slab , polished_andesite_slab , cobblestone_slab , mossy_cobblestone_slab , stone_brick_slab , mossy_stone_brick_slab , brick_slab , end_stone_brick_slab , nether_brick_slab , red_nether_brick_slab , sandstone_slab , cut_sandstone_slab , smooth_sandstone_slab , red_sandstone_slab , cut_red_sandstone_slab , smooth_red_sandstone_slab , quartz_slab , smooth_quartz_slab , purpur_slab , prismarine_slab , prismarine_brick_slab , dark_prismarine_slab , blackstone_slab , polished_blackstone_slab , polished_blackstone_brick_slab , cut_copper_slab , exposed_cut_copper_slab , weathered_cut_copper_slab , oxidized_cut_copper_slab , waxed_cut_copper_slab , waxed_exposed_cut_copper_slab , waxed_weathered_cut_copper_slab , waxed_oxidized_cut_copper_slab , cobbled_deepslate_slab , polished_deepslate_slab , deepslate_brick_slab , deepslate_tile_slab , mud_brick_slab , tuff_slab , polished_tuff_slab , tuff_brick_slab
+	#各種の階段(2025/04/14追加)
+	any stairs = oak_stairs , spruce_stairs , birch_stairs , jungle_stairs , acacia_stairs , dark_oak_stairs , cherry_stairs , bamboo_Stairs , bamboo_mosaic_stairs , crimson_stairs , warped_stairs , stone_stairs , granite_stairs , polished_granite_stairs , diorite_stairs , polished_diorite_stairs , andesite_stairs , polished_andesite_stairs , cobblestone_stairs , mossy_cobblestone_stairs , stone_brick_stairs , mossy_stone_brick_stairs , brick_stairs , end_stone_brick_stairs , nether_brick_stairs , red_nether_brick_stairs , sandstone_stairs , smooth_sandstone_stairs , red_sandstone_stairs , smooth_red_sandstone_stairs , quartz_stairs , smooth_quartz_stairs , purpur_stairs , prismarine_stairs , prismarine_brick_stairs , dark_prismarine_stairs , blackstone_stairs , polished_blackstone_stairs , polished_blackstone_brick_stairs , cut_copper_stairs , exposed_cut_copper_stairs , weathered_cut_copper_stairs , oxidized_cut_copper_stairs , waxed_cut_copper_stairs , waxed_exposed_cut_copper_stairs , waxed_weathered_cut_copper_stairs , waxed_oxidized_cut_copper_stairs , cobbled_deepslate_stairs , polished_deepslate_stairs , deepslate_brick_stairs , deepslate_tile_stairs , mud_brick_stairs , tuff_stairs , polished_tuff_stairs , tuff_brick_stairs
+	
+	# 的(2025/04/14追加)
+	archery target block = target
+
+
+	# 置換可能ブロックの一覧
+	replacable blocks = air, cave air, water, lava, dead bush, short grass, tall grass, any flower, fern, large fern , kelp plant, torch , wall torch
+	# 設置可能ブロックの一覧
+	# placable blocks = 
+
+options:
+	# 座標選択モードで，ブロックの探索は、自身のいる場所から水平方向へ
+	# 何ブロックまで探索するか（上から「梁・柱」「床・壁」「盛土・埋戻」）
+    limitRadiusLay: 128
+    limitRadiusFace: 128
+    limitRadiusCapacity: 128
+    limitLoop: 4000
+    # 積み上げモードで，許容されるブロックの個数とブロックの高さ
+    limitPileVolume: 131072
+    limitPileHeight: 16
+    # 屋根モードで，許容されるブロックの面積
+    limitRoofSize: 2500
+    # ブロック設置時，１つ目のブロック設置時のウェイト
+    iniWait: 8
+    # 自動建築が有効になる最低高度
+    minimumAltitude: 50
+
+
+
+# 【座標の選択】=========================================================
+
+# ブロック一括設置場所の選択
+# - 通常ディメンションでない、もしくは高さが最低高度以上でなければ発動しない（門前払い）
+# - 手に何も持たず（＝空気を手に持って）、的を右クリックすると発動
+# - スニークしながらのクリックだと、その１座標のみの選択を行う
+on rightclick:
+	# 条件チェック「対象が的ブロック」「手に何も持っていない」
+	event-block is archery target block
+	player is holding air
+	# 条件チェック「座標選択モードであること」「通常世界であること」「高さ61以上であること」
+	{devMode::%player%} is "select"
+	the world is world "world"
+	the event-location's altitude > {@minimumAltitude}
+	# ここから本処理
+	if the distance between the player and the targeted block > 5.5:
+		message "<gold>[S.Bld.]<r>ブロックを選択するためには、もう少し近づいてください。" to player
+		stop
+	set {_loc} to the targeted block's location
+	# ここから、通常の領域選択処理
+	# 下にも的ブロックを置いて右クリック→盛土・埋戻モード
+	if the block below {_loc} is archery target block:
+		depositBack(player, {_loc})
+		depositBack(player, the location below {_loc})
+		message "<gold>[S.Bld.]<r> <lime>盛土・埋戻モード<r>で領域選択 を行います。" to player
+		selectLoc(player, {_loc}, "abewsn", {@limitRadiusCapacity}, {_loc}'s altitude)
+	# Shiftキーを押しながら右クリック→壁・床モード
+	else if the player is sneaking:
+		if event-direction is above:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>床モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "ewsn", {@limitRadiusLay})
+		else if event-direction is below:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>床モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "ewsn", {@limitRadiusLay})
+		else if event-direction is east:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>壁モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "absn", {@limitRadiusLay})
+		else if event-direction is west:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>壁モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "absn", {@limitRadiusLay})
+		else if event-direction is south:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>壁モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "abew", {@limitRadiusLay})
+		else if event-direction is north:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>壁モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "abew", {@limitRadiusLay})
+	# Shiftキーを押さずに右クリック→梁・柱モード
+	else:
+		if event-direction is above:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>柱モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "a", {@limitRadiusLay})
+		else if event-direction is below:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>柱モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "b", {@limitRadiusLay})
+		else if event-direction is east:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>梁モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "e", {@limitRadiusLay})
+		else if event-direction is west:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>梁モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "w", {@limitRadiusLay})
+		else if event-direction is south:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>梁モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "s", {@limitRadiusLay})
+		else if event-direction is north:
+			depositBack(player, {_loc})
+			message "<gold>[S.Bld.]<r> <lime>梁モード<r>で領域選択 を行います。" to player
+			selectLoc(player, {_loc}, "n", {@limitRadiusLay})
+
+
+
+function selectLoc(player: player, startLoc: location, search: text, limitRadius: number = infinity value, limitAlt: number = infinity value):
+	#条件チェック
+	#ここから実処理
+	#探索可能な座標に，起点となる座標の値を加える
+	set {_locs::*} to {_startLoc}
+	#message {_locs::*} to {_player}
+	#選択した座標の数を数える
+	set {_selectCount} to 0
+	#ロック確認とロック
+	if {devLock} is true:
+		message "<gold>[S.Bld.]<r> <red>当機能は。<r>" to {_player}
+		stop
+	set {devLock} to true
+	#ループを続ける
+	loop {@limitLoop} times:
+		#探索可能な座標が配列に残っていない場合には，このループを抜ける
+		if {_locs::*} isn't set:
+			exit this loop
+		#探索可能な座標を1つ取り出し，探索候補配列からは削除
+		set {_loc} to the first element of {_locs::*}
+		remove first element of {_locs::*} from {_locs::*}
+		#その座標が探索可能な座標でない場合は，この座標の探索を中断し，次座標の探索へ移る
+		if {selectedLoc::*} contains {_loc}:			#すでにその座標が選択座標に含まれているとき
+			continue loop
+		if the block at {_loc} isn't replacable blocks:	#その座標が置換可能ブロックでないとき
+			continue loop
+		if {_loc}'s altitude < {@minimumAltitude}:						#その座標の高度が最低高度未満であるとき
+			continue loop
+		if {_loc}'s altitude > {_limitAlt}:			#その座標の高度が高度限界以上であるとき
+			continue loop
+		#その座標とプレイヤーの所在地の距離が探索限界を超えているとき
+		set {_horizonLoc} to the location at (x={_loc}'s x-coord, y=0, z={_loc}'s z-coord) in {_loc}'s world
+		set {_horizonPlayer} to the location at (x={_player}'s x-coord, y=0, z={_player}'s z-coord) in {_player}'s world
+		if distance between {_horizonLoc} and {_horizonPlayer} > {_limitRadius}:
+			continue loop
+		#諸々の条件チェックをパスしたので，座標を選択座標に加える（選択座標カウントにも1加える）
+		add {_loc} to {selectedLoc::*}
+		add 1 to {_selectCount}
+		#プレイヤーに座標選択の進捗をメッセージで説明
+		send action bar "<lime>%{_selectCount}%<r> 座標目を選択中..." to {_player}
+		# 10の倍数ごとに，サーバーに休憩を与える(サーバーの停止を阻止)
+		if mod({_selectCount}, 10) = 0:
+			wait a tick
+		#周囲6座標を計算にて求める
+		set {_nextLocA} to the location above {_loc}
+		set {_nextLocB} to the location below {_loc}
+		set {_nextLocE} to the location east {_loc}
+		set {_nextLocW} to the location west {_loc}
+		set {_nextLocS} to the location south {_loc}
+		set {_nextLocN} to the location north {_loc}
+		#もし探索方向キーに，そっち方面の探索指示が記されていれば，探索可能な座標配列の末席に加える
+		#負荷軽減のために，周囲座標が探索候補・選択両座標にも含まれていない場合にキューに入れる
+		if {_search} contains "a":
+			{selectedLoc::*} doesn't contain {_nextLocA}
+			{_loc::*} doesn't contain {_nextLocA}
+			add {_nextLocA} to {_locs::*}
+		if {_search} contains "b":
+			{selectedLoc::*} doesn't contain {_nextLocB}
+			{_loc::*} doesn't contain {_nextLocB}
+			add {_nextLocB} to {_locs::*}
+		if {_search} contains "e":
+			{selectedLoc::*} doesn't contain {_nextLocE}
+			{_loc::*} doesn't contain {_nextLocE}
+			add {_nextLocE} to {_locs::*}
+		if {_search} contains "w":
+			{selectedLoc::*} doesn't contain {_nextLocW}
+			{_loc::*} doesn't contain {_nextLocW}
+			add {_nextLocW} to {_locs::*}
+		if {_search} contains "s":
+			{selectedLoc::*} doesn't contain {_nextLocS}
+			{_loc::*} doesn't contain {_nextLocS}
+			add {_nextLocS} to {_locs::*}
+		if {_search} contains "n":
+			{selectedLoc::*} doesn't contain {_nextLocN}
+			{_loc::*} doesn't contain {_nextLocN}
+			add {_nextLocN} to {_locs::*}
+		#wait a tick
+	#最後に結果報告
+	send action bar "" to {_player}
+	message "<gold>[S.Bld.]<r> 計 <lime>%{_selectCount}%<r> 座標を選択しました。" to {_player}
+	set {devLock} to false
+
+
+
+# 【座標の消去】=========================================================
+
+# 1つの選択座標を基準に、連結している座標の領域選択を解除
+# - 選択座標に的ブロックを設置することで実現
+# - 当イベントは選択されている座標にブロックを設置しないと発動しない
+on place:
+	# 条件チェック
+	the event-block is an archery target block	# 設置されたブロックが的であること
+	{selectedLoc::*} contains event-location	# 設置された座標が選択座標であること
+	#ロック確認とロック
+	if {devLock} is true:
+		stop
+	set {devLock} to true
+	# ここから実際の処理。
+	# 的ブロックは壊して、プレイヤーに返却
+	depositBack(player, event-location)
+	# SHIFTを押下している場合には，１座標のみの選択解除処理
+	if the player is sneaking:
+		remove the event-location from {selectedLoc::*}
+		message "<gold>[S.Bld.]<r> <magenta>選択単座標の消去<r> を行います。" to player
+		exit
+	# ここから、通常の領域選択解除処理
+	message "<gold>[S.Bld.]<r> <magenta>選択領域の消去<r> を行います。" to player
+	# 探索(削除)可能な座標に，起点となる座標の値を加える
+	set {_locs::*} to event-location
+	# 選択(削除)した座標の数を数える
+	set {_removeCount} to 0
+	# ループを続ける
+	loop {@limitLoop} times:
+		# 探索(削除)可能な座標が配列に残っていない場合には，このループを抜ける
+		if {_locs::*} isn't set:
+			exit this loop
+		# 探索(削除)可能な座標を1つ取り出し，探索(削除)候補配列からは削除
+		set {_loc} to the first element of {_locs::*}
+		remove first element of {_locs::*} from {_locs::*}
+		# その座標が探索(削除)可能な座標でない場合は，この座標の探索を中断し，次座標の探索へ移る
+		if {selectedLoc::*} doesn't contain {_loc}:			# その座標が選択座標に含まれていないとき
+			continue loop
+		# 諸々の条件チェックをパスしたので，選択座標から当該座標を削除（選択座標カウントにも1加える）
+		remove {_loc} from {selectedLoc::*}
+		add 1 to {_removeCount}
+		#もし，選択座標カウントが20の倍数であるならば，プレイヤーに座標選択の進捗をメッセージで説明
+		send action bar "<lime>%{_removeCount}%<r> 座標目を選択解除中..." to player
+		#if mod({_removeCount}, 20) = 0:
+		#	
+		#周囲6座標を計算にて求める
+		set {_nextLocA} to the location above {_loc}
+		set {_nextLocB} to the location below {_loc}
+		set {_nextLocE} to the location east {_loc}
+		set {_nextLocW} to the location west {_loc}
+		set {_nextLocS} to the location south {_loc}
+		set {_nextLocN} to the location north {_loc}
+		# ６方面座標を探索可能な座標配列の末席に加える
+		#負荷軽減のために，周囲座標が探索候補・選択両座標にも含まれていない場合にキューに入れる
+		if {selectedLoc::*} contains {_nextLocA}:
+			{_loc::*} doesn't contain {_nextLocA}
+			add {_nextLocA} to {_locs::*}
+		if {selectedLoc::*} contains {_nextLocB}:
+			{_loc::*} doesn't contain {_nextLocB}
+			add {_nextLocB} to {_locs::*}
+		if {selectedLoc::*} contains {_nextLocE}:
+			{_loc::*} doesn't contain {_nextLocE}
+			add {_nextLocE} to {_locs::*}
+		if {selectedLoc::*} contains {_nextLocW}:
+			{_loc::*} doesn't contain {_nextLocW}
+			add {_nextLocW} to {_locs::*}
+		if {selectedLoc::*} contains {_nextLocS}:
+			{_loc::*} doesn't contain {_nextLocS}
+			add {_nextLocS} to {_locs::*}
+		if {selectedLoc::*} contains {_nextLocN}:
+			{_loc::*} doesn't contain {_nextLocN}
+			add {_nextLocN} to {_locs::*}
+		#wait a tick
+	#最後に結果報告とロック解除
+	send action bar "" to player
+	message "<gold>[S.Bld.]<r> 計 <lime>%{_removeCount}%<r> 座標を選択座標から消去しました。" to player
+	set {devLock} to false
+
+
+
+# 【ブロックの一括設置】=========================================================
+
+# 選択座標をブロックで満たす
+# - 的ブロックは領域選択用ブロックなので、これで選択領域を満たすことはできない
+# - 当イベントは選択されている座標にブロックを設置しないと発動しない
+on place:
+	# 条件チェック
+	the event-block isn't an archery target block
+	{selectedLoc::*} contains event-location
+	# ロック確認とロック
+	if {devLock} is true:
+		message "<gold>[S.Bld.]<r>自動建築機能にロックがかかっています。 " to player
+		message " <b>/development unlock<r> でロックを解除するか，しばらくお待ちください。" to player
+		stop
+	set {devLock} to true
+	# ここから、通常の領域選択解除処理
+	message "<gold>[S.Bld.]<r> <lime>選択領域へのブロック設置<r> を行います。" to player
+	# ブロック設置可能な座標に，起点となる座標の値を加える
+	set {_locs::*} to event-location
+	# 加速するウェイトの初期値を得る・ブロック設置した座標の数を数える
+	set {_wait} to round up {@iniWait}
+	set {_setCount} to 0
+	# 使用したアイテムの取得
+	set {_eventItem} to a plain the player's tool
+	# ループを続ける
+	loop {@limitLoop} times:
+		# 緊急コードが入力された際には停止
+		if {devEmergency} is true:
+			stop
+		# 次のときは，ループを抜ける
+		if {_locs::*} isn't set:						# ブロック設置可能な座標が配列に残っていない場合
+			exit this loop
+		if the player doesn't have {_eventItem}:		# ブロックを所持していない場合
+			message "<gold>[S.Bld.]<r> <red>ブロックが底を尽きました。<r>処理を中断します。" to player
+			exit this loop
+		if the player's money < 0.01:					# お金がない場合
+			message "<gold>[S.Bld.]<r> <red>資金が底を尽きました。<r>処理を中断します。" to player
+			exit this loop
+		# 選択座標を1つ取り出し，ブロック設置候補配列＆
+		set {_loc} to the first element of {_locs::*}
+		remove first element of {_locs::*} from {_locs::*}
+		if {selectedLoc::*} doesn't contain {_loc}:
+			continue loop
+		# ここまで突破できていれば，当該座標にブロックを設置してもよい
+		# 選択座標からは削除
+		remove {_loc} from {selectedLoc::*}
+		# 諸々の条件チェックをパスしたので，ブロック設置等処理
+		set block at location at {_loc} to event-block									# ブロックを置く
+		# 待つ処理
+		wait "%{_wait}% ticks" parsed as timespan
+		if {_wait} > 1:
+			remove 1 from {_wait}
+		remove {_eventItem} from the player if the player's gamemode is survival		# アイテムをプレイヤーから剥奪
+		#remove 0.01 from the player's money if the player's gamemode is survival			# お金を0.1とる
+		add 1 to {_setCount}															# 設置カウント +1
+		#もし，選択座標カウントが20の倍数であるならば，プレイヤーに座標選択の進捗をメッセージで説明
+		send action bar "<lime>%{_setCount}%<r> 座標目にブロック設置中..." to player
+		#if mod({_removeCount}, 20) = 0:
+		#	
+		#周囲6座標を計算にて求める
+		set {_nextLocA} to the location above {_loc}
+		set {_nextLocB} to the location below {_loc}
+		set {_nextLocE} to the location east {_loc}
+		set {_nextLocW} to the location west {_loc}
+		set {_nextLocS} to the location south {_loc}
+		set {_nextLocN} to the location north {_loc}
+		# ６方面座標を探索可能な座標配列の末席に加える
+		#負荷軽減のために，周囲座標が探索候補・選択両座標にも含まれていない場合にキューに入れる
+		if {selectedLoc::*} contains {_nextLocA}:
+			{_loc::*} doesn't contain {_nextLocA}
+			add {_nextLocA} to {_locs::*}
+			#message "上" to player
+		if {selectedLoc::*} contains {_nextLocB}:
+			{_loc::*} doesn't contain {_nextLocB}
+			add {_nextLocB} to {_locs::*}
+			#message "下" to player
+		if {selectedLoc::*} contains {_nextLocE}:
+			{_loc::*} doesn't contain {_nextLocE}
+			add {_nextLocE} to {_locs::*}
+			#message "東" to player
+		if {selectedLoc::*} contains {_nextLocW}:
+			{_loc::*} doesn't contain {_nextLocW}
+			add {_nextLocW} to {_locs::*}
+			#message "西" to player
+		if {selectedLoc::*} contains {_nextLocS}:
+			{_loc::*} doesn't contain {_nextLocS}
+			add {_nextLocS} to {_locs::*}
+			#message "南" to player
+		if {selectedLoc::*} contains {_nextLocN}:
+			{_loc::*} doesn't contain {_nextLocN}
+			add {_nextLocN} to {_locs::*}
+			#message "北" to player
+		#wait a tick
+	#最後に結果報告とロック解除
+	send action bar "" to player
+	message "<gold>[S.Bld.]<r> 計 <lime>%{_setCount}%<r> 座標にブロックを設置しました。" to player
+	set {devLock} to false
+
+
+
+
+# 【ブロックの積み上げ】=====================================================
+
+# 積み上げる元となるブロック範囲の選択
+# - 手に何も持たず（＝空気を手に持って）、的を右クリックすると発動
+on rightclick:
+	# 条件チェック「対象が的ブロック」「手に何も持っていない」
+	event-block is archery target block
+	player is holding air
+	# 条件チェック「積み上げモードであること」「通常世界であること」「高さが最低高度以上であること」「Shiftキーを押していないこと」
+	{devMode::%player%} is "pile"
+	the world is world "world"
+	the event-location's altitude > {@minimumAltitude}
+	# もっと接近してくれ
+	if the distance between the player and the targeted block > 5.5:
+		message "<gold>[S.Bld.]<r>ブロックを選択するためには、もう少し近づいてください。" to player
+		stop
+	# ここから本処理
+	# 座標は２点必要となるが，１点も登録がない場合には，この処理で座標１を登録（して終了）
+	if {devPileLoc1::%player%} is "":
+		set {devPileLoc1::%player%} to event-location
+		set {_el} to event-location
+		message "<gold>[S.Bld.]<r> 1つめの座標 <gray>(%{_el}'s x-loc%, %{_el}'s y-loc%, %{_el}'s z-loc%)<r> を登録しました。" to player
+		message " 座標をもう1つ選択して直方体の範囲を設定してください。" to player
+		depositBack(player, event-location)		# 的ブロックは壊して、プレイヤーに返却
+		stop
+	# すでに２点も登録されている場合には，処理を中断して終了
+	if {devPileLoc2::%player%} isn't "":
+		set {_el1} to {devPileLoc1::%player%}
+		set {_el2} to {devPileLoc2::%player%}
+		message "<gold>[S.Bld.] <red>すでに座標が2つ，登録されています。" to player
+		message " <gray>(%{_el1}'s x-loc%, %{_el1}'s y-loc%, %{_el1}'s z-loc%), (%{_el2}'s x-loc%, %{_el2}'s y-loc%, %{_el2}'s z-loc%)<r>" to player
+		message " 座標をもう1つ選択して直方体の範囲を設定してください。" to player
+		stop
+	# １座標めの登録がある場合には，登録可能かの適正を計算して２点目の登録を実施する。
+	set {_y} to abs( (event-location's y-loc) - ({devPileLoc1::%player%}'s y-loc) )
+	if {_y} > {@limitPileHeight}:
+		message "<gold>[S.Bld.] <red>指定範囲が高さ制限を超えています。" to player
+		message " 高さを {@limitPileHeight} ブロック 以内に抑えてください。" to player
+		stop
+	set {_x} to abs( (event-location's x-loc) - ({devPileLoc1::%player%}'s x-loc) )
+	set {_z} to abs( (event-location's z-loc) - ({devPileLoc1::%player%}'s z-loc) )
+	set {_vol} to {_x} * {_y} * {_z}
+	if {_vol} > {@limitPileVolume}:
+		message "<gold>[S.Bld.] <red>指定範囲が容積制限を超えています。" to player
+		message " 容積を {@limitPileVolume} ブロック 以内に抑えてください。" to player
+		stop
+	set {devPileLoc2::%player%} to event-location
+	set {_el} to event-location
+	message "<gold>[S.Bld.]<r> 2つめの座標 <gray>(%{_el}'s x-loc%, %{_el}'s y-loc%, %{_el}'s z-loc%)<r> を登録しました。" to player
+	message " パーティクルを見て，選択範囲が正しいことを確認してください。" to player
+	set {_height} to (difference between {devPileLoc1::%player%}'s altitude and {devPileLoc2::%player%}'s altitude) + 1
+	message " コマンド <b>/development pile do 自然数<r> で積み上げを実行します。" to player
+	depositBack(player, event-location)		# 的ブロックは壊して、プレイヤーに返却
+	#set {_itemOfBlock} to blockToItem(event-block)
+	#message "<gold>[S.Bld.]<r> <lime>%{_itemOfBlock}%<r>" to player
+
+
+# 積み上げを実行に移す
+function doPile(player: player, loc1: location, loc2: location, floors: integer) :: boolean:
+	# ロック確認とロック
+	if {devLock} is true:
+		message "<gold>[S.Bld.] <red>自動建築機能にロックがかかっています。 " to {_player}
+		message " <b>/development unlock<r> でロックを解除するか，しばらくお待ちください。" to {_player}
+		stop
+	set {devLock} to true
+	# 矩形の高さを求める，初期のウェイト時間を取得（ブロック設置ごとに減る）
+	set {_height} to (difference between {devPileLoc1::%{_player}%}'s altitude and {devPileLoc2::%{_player}%}'s altitude) + 1
+	set {_wait} to round up {@iniWait}
+	set {_setCount} to 0
+	# 警告など表示
+	message "<gold>[S.Bld.]<r> <lime>選択領域へのブロック設置<r> を行います...。" to {_player}
+	message " <red><b>緊急停止<r> するには，コマンド <b>/development emergency<r> を入力します。" to {_player}
+	# 指定の階数ぶん，積み上げを実行する
+	loop {_floors} times:
+		set {_hxf} to loop-number * {_height}		# コピー元ブロックから何メートル高いところにブロックを積むかを計算・代入
+		loop all of the blocks within {devPileLoc1::%{_player}%} and {devPileLoc2::%{_player}%}:
+			# 緊急コードが入力された際には停止
+			if {devEmergency} is true:
+				stop
+			set {_origLoc} to loop-value-2									# コピー元座標
+			set {_copyLoc} to the block {_hxf} meters above {_origLoc}		# コピー先座標
+			# コピー先高さが320異常ならば停止
+			if {_copyLoc}'s altitude >= 320:
+				message "<gold>[S.Bld.]<r> <red>コピー先ブロックの高さが最高地点を越えました。<r>処理を中断します。" to {_player}
+				stop
+			set {_itemOfBlock} to blockToItem({_origLoc})					# ブロックのアイテム名を得る
+			if the block at {_origLoc} is air or cave air:					# コピー元座標が空気ブロックならばコピー処理せずに飛ばす
+				continue
+			if the block at {_copyLoc} isn't air or cave air:				# コピー先座標が空気ブロックでなければコピー処理せずに飛ばす
+				continue
+			set {_item} to blockToItem(the block at {_origLoc})				# 設置するブロックのアイテム型を取得し...
+			if {_item} is wall torch:										# 一部のアイテムは言い換えてあげないとダメ
+				set {_item} to "torch" parsed as item
+			if {_player} doesn't have {_item}:								# そのアイテムを所持していない場合は処理を中断（サバイバル）
+				{_player}'s game mode is survival
+				message "<gold>[S.Bld.]<r> <red>ブロック（%{_item}%）が底を尽きました。<r>処理を中断します。" to {_player}
+				# 以下2行のコメントアウトを外すと，ブロックが尽きたときに，わざわざ選択範囲を解除するようになる
+				# set {devPileLoc1::%{_player}%} to ""
+				# set {devPileLoc2::%{_player}%} to ""
+				set {devLock} to false
+				stop
+			else:															# そうでなければ，アイテムを1つ減らす（サバイバル）
+				{_player}'s game mode is survival
+				remove {_item} from {_player}
+			set the block at {_copyLoc} to the block at {_origLoc}			# ここで１座標のコピーを実行
+			# ウェイトして，次回のウェイトを1減らす。また，設置ブロック数に1をたす
+			wait "%{_wait}% ticks" parsed as timespan
+			if {_wait} > 1:
+				remove 1 from {_wait}
+			add 1 to {_setCount}
+			send action bar "<lime>%loop-number%階層目<r> / %{_floors}%階層中 ｜ <lime>%{_setCount}%<r> 座標目にブロック設置中..." to {_player}
+	# 成功したら座標をリセットして結果報告してロック解除して終わり
+	set {devPileLoc1::%{_player}%} to ""
+	set {devPileLoc2::%{_player}%} to ""
+	send action bar "" to {_player}
+	message "<gold>[S.Bld.]<r> 計 <lime>%{_setCount}%<r> 座標にブロックを設置しました。" to {_player}
+	set {devLock} to false
+
+#on rightclick holding air:
+#	# 条件チェック「積み上げモードであること」「通常世界であること」「高さが最低高度以上であること」
+#	{devMode::%player%} is "pile"
+#	the world is world "world"
+#	the event-location's altitude > {@minimumAltitude}
+#	# 本処理
+#	set {_itemOfBlock} to blockToItem(event-block)
+#	message "<gold>[S.Bld.]<r> <lime>%{_itemOfBlock}%<r>"
+#	#remove dirt from player
+#	remove {_itemOfBlock} from player
+
+
+
+
+# 【屋根の生成座標設定】=====================================================
+
+# 屋根を生成するブロック範囲の選択
+# - 手に何も持たず（＝空気を手に持って），的を右クリックすると発動
+on rightclick:
+	# 条件チェック「対象が的ブロック」「手に何も持っていない」
+	"%event-block%" contains "target"
+	player is holding air
+	# 条件チェック「屋根モードであること」「通常世界であること」「高さが最低高度以上であること」「Shiftキーを押していないこと」
+	{devMode::%player%} is "roof"
+	the world is world "world"
+	the event-location's altitude > {@minimumAltitude}
+	# もっと接近してくれ
+	if the distance between the player and the targeted block > 5.5:
+		message "<gold>[S.Bld.]<r>ブロックを選択するためには、もう少し近づいてください。" to player
+		stop
+	# ここから本処理
+	# 座標は２点必要となるが，１点も登録がない場合には，この処理で座標１を登録（して終了）
+	if {devRoofLoc1::%player%} is "":
+		set {devRoofLoc1::%player%} to event-location
+		set {_el} to event-location
+		message "<gold>[S.Bld.]<r> 1つめの座標 <gray>(%{_el}'s x-loc%, %{_el}'s y-loc%, %{_el}'s z-loc%)<r> を登録しました。" to player
+		message " 座標をもう1つ選択して長方形の範囲を設定してください。" to player
+		depositBack(player, event-location)		# 的ブロックは壊して、プレイヤーに返却
+		stop
+	# すでに２点も登録されている場合には，処理を中断して終了
+	if {devRoofLoc2::%player%} isn't "":
+		set {_el1} to {devRoofLoc1::%player%}
+		set {_el2} to {devRoofLoc2::%player%}
+		message "<gold>[S.Bld.] <red>すでに座標が2つ，登録されています。" to player
+		message " <gray>(%{_el1}'s x-loc%, %{_el1}'s y-loc%, %{_el1}'s z-loc%), (%{_el2}'s x-loc%, %{_el2}'s y-loc%, %{_el2}'s z-loc%)<r>" to player
+		message " 座標をもう1つ選択して長方形の範囲を設定してください。" to player
+		stop
+	# １座標めの登録がある場合には，登録可能かの適正を計算して２点目の登録を実施する。
+	set {_x} to abs( (event-location's x-loc) - ({devRoofLoc1::%player%}'s x-loc) )		# たての長さ（absは絶対値）
+	set {_z} to abs( (event-location's z-loc) - ({devRoofLoc1::%player%}'s z-loc) )		# よこの長さ
+	set {_size} to {_x} * {_z}
+	if {_size} > {@limitRoofSize}:
+		message "<gold>[S.Bld.] <red>指定範囲が面積制限を超えています。" to player
+		message " 面積を {@limitRoofSize} ブロック 以内に抑えてください。" to player
+		stop
+	# 以下で第2座標を記録するが，Y座標は第1座標とそろえる
+	set {devRoofLoc2::%player%} to the location (event-location's x-loc, {devRoofLoc1::%player%}'s y-loc, event-location's z-loc)
+	set {_el} to {devRoofLoc2::%player%}
+	message "<gold>[S.Bld.]<r> 2つめの座標 <gray>(%{_el}'s x-loc%, %{_el}'s y-loc%, %{_el}'s z-loc%)<r> を登録しました。" to player
+	if {devRoofLoc1::%player%}'s y-loc isn't event-location's y-loc:
+		message " <yellow>(2つめの座標の高さが1つめの座標の高さと違ったため，データを修正しました)<r>" to player
+	message " パーティクルを見て，選択範囲が正しいことを確認してください。" to player
+	depositBack(player, event-location)		# 的ブロックは壊して、プレイヤーに返却
+
+
+# 【屋根生成】=========================================================
+
+# 選択座標を底辺として屋根を生成
+# - 的ブロックは領域選択用ブロックなので、これで選択領域を満たすことはできない
+# - 当イベントはプレイヤーが屋根モードでなければ発動しない
+# - 当イベントは選択されている座標にブロックを設置しないと発動しない
+on place:
+	# 単純な条件チェック
+	the event-block isn't an archery target block
+	{devMode::%player%} is "roof"
+	{devRoofLoc2::%event-player%} isn't ""
+	the world is world "world"
+	# ２座標のY座標と，X，Z座標における最大値，最小値を求める
+	set {_loc} to the event-location
+	set {_x1} to min({devRoofLoc1::%event-player%}'s x-loc, {devRoofLoc2::%event-player%}'s x-loc)
+	set {_x2} to max({devRoofLoc1::%event-player%}'s x-loc, {devRoofLoc2::%event-player%}'s x-loc)
+	set {_y} to {devRoofLoc2::%event-player%}'s y-loc
+	set {_z1} to min({devRoofLoc1::%event-player%}'s z-loc, {devRoofLoc2::%event-player%}'s z-loc)
+	set {_z2} to max({devRoofLoc1::%event-player%}'s z-loc, {devRoofLoc2::%event-player%}'s z-loc)
+	# 設置したブロックが正しく外周部に置かれていなければプログラム終了
+	stop if {_loc}'s y-loc isn't {_y}
+	set {_isFrame} to 0
+	add 1 to {_isFrame} if {_loc}'s x-loc is between {_x1} and {_x2}
+	add 1 to {_isFrame} if {_loc}'s x-loc is {_x1}
+	add 1 to {_isFrame} if {_loc}'s x-loc is {_x2}
+	add 1 to {_isFrame} if {_loc}'s z-loc is between {_z1} and {_z2}
+	add 1 to {_isFrame} if {_loc}'s z-loc is {_z1}
+	add 1 to {_isFrame} if {_loc}'s z-loc is {_z2}
+	stop if {_isFrame} is less than 3
+	# 形の指定がおかしい場合は強制的に寄棟造にする
+	if {devRoofShape::%player%} doesn't contain "n":
+		if {devRoofShape::%player%} doesn't contain "e":
+			if {devRoofShape::%player%} doesn't contain "w":
+				if {devRoofShape::%player%} doesn't contain "s":
+					set {devRoofShape::%player%} to "news"
+	# ロック確認とロック
+	if {devLock} is true:
+		message "<gold>[S.Bld.]<r> 自動建築機能にロックがかかっています。 " to player
+		message " <b>/development unlock<r> でロックを解除するか，しばらくお待ちください。" to player
+		stop
+	set {devLock} to true
+	# ここから本処理
+	# 設置されたブロックやアイテムのデータを取得
+	set {_bd} to the event-block's block data		# ブロックのblockdataをテキストで取得
+	set {_rb} to raw name of the event-block		# ブロックの生名称を取得
+	set {_ri} to blockToItem(the event-block)		# アイテムの生名称を取得
+	#cancel the event
+	#wait a tick
+	# 置かれたブロックが，階段か，ハーフブロックか，それ以外かで処理の分岐を変える
+	# （ハーフブロックの場合）
+	if event-block is any slabs:
+		set {_bdt} to "%{_bd}%"		# blockdataを文字列化
+		if {_bdt} contains "type=top":
+			setRoofTopSlab(event-player, {devRoofShape::%player%}, {_bd}, {_rb}, {_ri}, {_x1}, {_x2}, {_y}, {_z1}, {_z2}, 1, {devRoofWeight::%player%})
+		else if {_bdt} contains "type=bottom":
+			setRoofBottomSlab(event-player, {devRoofShape::%player%}, {_bd}, {_rb}, {_ri}, {_x1}, {_x2}, {_y}, {_z1}, {_z2}, 1, {devRoofWeight::%player%})
+		else:
+			message "<gold>[S.Bld.]<r> ダブルのハーフブロックで屋根生成はできません。" to player
+	# （階段の場合）
+	else if event-block is any stairs:
+		setRoofStair(event-player, {devRoofShape::%player%}, {_bd}, {_rb}, {_ri}, {_x1}, {_x2}, {_y}, {_z1}, {_z2}, 1, {devRoofWeight::%player%})
+	# （それ以外の場合）
+	else:
+		setRoofBlock(event-player, {devRoofShape::%player%}, {_bd}, {_rb}, {_ri}, {_x1}, {_x2}, {_y}, {_z1}, {_z2}, 1, {devRoofWeight::%player%})
+
+	#setRoofStairs(event-player, {_rb}, {_ri}, {_x1}, {_x2}, {_y}, {_z1}, {_z2}, 1)
+	# 成功したら座標をリセットして結果報告してロック解除して終わり
+	#set {devRoofLoc1::%{_player}%} to ""
+	#set {devRoofLoc2::%{_player}%} to ""
+	#send action bar "" to {_player}
+	#message "<gold>[S.Bld.]<r> 計 <lime>%{_setCount}%<r> 座標にブロックを設置しました。" to {_player}
+	#set {devLock} to false
+
+# （関数）ブロック単設置
+# - block:設置するブロックの場所，rb:ブロックデータ
+function setOneBlock(block: block, bd: blockdata):
+	set {_kari} to "%{_rb}% %{_data}%"			# blockdataのテキストを作成し...
+	set {_bd} to {_kari} parsed as block data	# それをblockdataに型変換
+	set the block at {_loc} to {_bd}			# 設置
+
+
+
+
+# 通常ブロックの積み上げ
+# - pl:プレイヤー，shape:屋根の形，bd:blockdata，ri:アイテム生名称，count:生成何週目？，limit:生成限界
+function setRoofBlock(player: player, shape: text, bd: blockdata, rb:text, ri: item, x1: number, x2: number, y: number, z1: number, z2: number, count: number, weight: number):
+	# データエラーチェック
+	if {_count} > {_weight}:
+		message "<gold>[S.Bld.]<r> <lime>指定された太さ(%{_weight}%)まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	if {_x1} is bigger than {_x2}:
+		message "<gold>[S.Bld.]<r> <lime>生成できる限界まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	if {_z1} is bigger than {_z2}:
+		message "<gold>[S.Bld.]<r> <lime>生成できる限界まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	# ここから本処理
+	# 4辺にブロック
+	# 西辺
+	if {_shape} contains "n":
+		loop blocks from location({_x1},{_y},{_z1}) to location({_x2},{_y},{_z1}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 東辺
+	if {_shape} contains "s":
+		loop blocks from location({_x1},{_y},{_z2}) to location({_x2},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 北辺
+	if {_shape} contains "w":
+		loop blocks from location({_x1},{_y},{_z1}) to location({_x1},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 南辺
+	if {_shape} contains "e":
+		loop blocks from location({_x2},{_y},{_z1}) to location({_x2},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	wait a tick
+	# 上段の屋根生成座標を計算したあと，次の段へ！
+	add 1 to {_x1} if {_shape} contains "w"
+	remove 1 from {_x2} if {_shape} contains "e"
+	add 1 to {_z1} if {_shape} contains "n"
+	remove 1 from {_z2} if {_shape} contains "s"
+	setRoofBlock({_player}, {_shape}, {_bd}, {_rb}, {_ri}, {_x1}, {_x2}, {_y}+1, {_z1}, {_z2}, {_count}+1, {_weight})
+
+
+
+
+# 下付きハーフブロックの積み上げ
+# - pl:プレイヤー，shape:屋根の形，bd:blockdata，ri:アイテム生名称，count:生成何週目？，limit:生成限界
+function setRoofBottomSlab(player: player, shape: text, bd: blockdata, rb:text, ri: item, x1: number, x2: number, y: number, z1: number, z2: number, count: number, weight: number):
+	# データエラーチェック
+	if {_count} > {_weight}:
+		message "<gold>[S.Bld.]<r> <lime>指定された太さ(%{_weight}%)まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	if {_x1} is bigger than {_x2}:
+		message "<gold>[S.Bld.]<r> <lime>生成できる限界まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	if {_z1} is bigger than {_z2}:
+		message "<gold>[S.Bld.]<r> <lime>生成できる限界まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	# ここから本処理
+	set {_bd} to "%{_rb}%[type=bottom]" parsed as blockdata				# 引数bdに再代入
+	# 4辺にブロック
+	# 西辺
+	if {_shape} contains "n":
+		loop blocks from location({_x1},{_y},{_z1}) to location({_x2},{_y},{_z1}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 東辺
+	if {_shape} contains "s":
+		loop blocks from location({_x1},{_y},{_z2}) to location({_x2},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 北辺
+	if {_shape} contains "w":
+		loop blocks from location({_x1},{_y},{_z1}) to location({_x1},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 南辺
+	if {_shape} contains "e":
+		loop blocks from location({_x2},{_y},{_z1}) to location({_x2},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	wait a tick
+	# 上段の屋根生成座標を計算したあと，次の段へ！
+	add 1 to {_x1} if {_shape} contains "w"
+	remove 1 from {_x2} if {_shape} contains "e"
+	add 1 to {_z1} if {_shape} contains "n"
+	remove 1 from {_z2} if {_shape} contains "s"
+	setRoofTopSlab({_player}, {_shape}, {_bd}, {_rb}, {_ri}, {_x1}, {_x2}, {_y}, {_z1}, {_z2}, {_count}+1, {_weight})	# yはたすな！
+
+
+
+
+# 上付きハーフブロックの積み上げ
+# - pl:プレイヤー，shape:屋根の形，bd:blockdata，ri:アイテム生名称，count:生成何週目？，limit:生成限界
+function setRoofTopSlab(player: player, shape: text, bd: blockdata, rb:text, ri: item, x1: number, x2: number, y: number, z1: number, z2: number, count: number, weight: number):
+	# データエラーチェック
+	if {_count} > {_weight}:
+		message "<gold>[S.Bld.]<r> <lime>指定された太さ(%{_weight}%)まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	if {_x1} is bigger than {_x2}:
+		message "<gold>[S.Bld.]<r> <lime>生成できる限界まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	if {_z1} is bigger than {_z2}:
+		message "<gold>[S.Bld.]<r> <lime>生成できる限界まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	# ここから本処理
+	set {_bd} to "%{_rb}%[type=top]" parsed as blockdata				# 引数bdに再代入
+	# 4辺にブロック
+	# 西辺
+	if {_shape} contains "n":
+		loop blocks from location({_x1},{_y},{_z1}) to location({_x2},{_y},{_z1}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 東辺
+	if {_shape} contains "s":
+		loop blocks from location({_x1},{_y},{_z2}) to location({_x2},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 北辺
+	if {_shape} contains "w":
+		loop blocks from location({_x1},{_y},{_z1}) to location({_x1},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 南辺
+	if {_shape} contains "e":
+		loop blocks from location({_x2},{_y},{_z1}) to location({_x2},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	wait a tick
+	# 上段の屋根生成座標を計算したあと，次の段へ！
+	add 1 to {_x1} if {_shape} contains "w"
+	remove 1 from {_x2} if {_shape} contains "e"
+	add 1 to {_z1} if {_shape} contains "n"
+	remove 1 from {_z2} if {_shape} contains "s"
+	setRoofBottomSlab({_player}, {_shape}, {_bd}, {_rb}, {_ri}, {_x1}, {_x2}, {_y}+1, {_z1}, {_z2}, {_count}+1, {_weight})
+
+
+
+
+# 階段ブロックの積み上げ
+# - pl:プレイヤー，shape:屋根の形，bd:blockdata，ri:アイテム生名称，count:生成何週目？，limit:生成限界
+function setRoofStair(player: player, shape: text, bd: blockdata, rb:text, ri: item, x1: number, x2: number, y: number, z1: number, z2: number, count: number, weight: number):
+	# データエラーチェック
+	if {_count} > {_weight}:
+		message "<gold>[S.Bld.]<r> <lime>指定された太さ(%{_weight}%)まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	if {_x1} is bigger than {_x2}:
+		message "<gold>[S.Bld.]<r> <lime>生成できる限界まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	if {_z1} is bigger than {_z2}:
+		message "<gold>[S.Bld.]<r> <lime>生成できる限界まで屋根を生成し終わりました。" to {_player}
+		set {devRoofLoc1::%{_player}%} to ""
+		set {devRoofLoc2::%{_player}%} to ""
+		set {devLock} to false
+		stop
+	# ここから本処理
+	# 4辺にブロック
+	# 西辺
+	if {_shape} contains "n":
+		loop blocks from location({_x1},{_y},{_z1}) to location({_x2},{_y},{_z1}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set {_bd} to "%{_rb}%[facing=south;half=bottom;shape=straight]" parsed as blockdata
+			#message "%{_bd}%" to {_player}
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 東辺
+	if {_shape} contains "s":
+		loop blocks from location({_x1},{_y},{_z2}) to location({_x2},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set {_bd} to "%{_rb}%[facing=north;half=bottom;shape=straight]" parsed as blockdata
+			#message "%{_bd}%" to {_player}
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 西辺
+	if {_shape} contains "w":
+		loop blocks from location({_x1},{_y},{_z1}) to location({_x1},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set {_bd} to "%{_rb}%[facing=east;half=bottom;shape=straight]" parsed as blockdata
+			#message "%{_bd}%" to {_player}
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 東辺
+	if {_shape} contains "e":
+		loop blocks from location({_x2},{_y},{_z1}) to location({_x2},{_y},{_z2}):
+			stop if isNoItem({_player}, {_ri}) is true
+			set {_bd} to "%{_rb}%[facing=west;half=bottom;shape=straight]" parsed as blockdata
+			# "%{_bd}%" to {_player}
+			set the loop-block to {_bd} if loop-block is replacable blocks
+	# 4頂点にブロック
+	if {_shape} contains "w":
+		# 北西
+		if {_shape} contains "n":
+			set {_bd} to "%{_rb}%[facing=east;half=bottom;shape=outer_right]" parsed as blockdata
+			set {_edgeBlock} to the block at location({_x1},{_y},{_z1})
+			set {_edgeBlock} to {_bd}
+		# 南西
+		if {_shape} contains "s":
+			set {_bd} to "%{_rb}%[facing=south;half=bottom;shape=outer_right]" parsed as blockdata
+			set {_edgeBlock} to the block at location({_x2},{_y},{_z1})
+			set {_edgeBlock} to {_bd}
+	if {_shape} contains "e":
+		# 北東
+		if {_shape} contains "n":
+			set {_bd} to "%{_rb}%[facing=east;half=bottom;shape=outer_left]" parsed as blockdata
+			set {_edgeBlock} to the block at location({_x1},{_y},{_z2})
+			set {_edgeBlock} to {_bd}
+		# 南東
+		if {_shape} contains "s":
+			set {_bd} to "%{_rb}%[facing=north;half=bottom;shape=outer_left]" parsed as blockdata
+			set {_edgeBlock} to the block at location({_x2},{_y},{_z2})
+			set {_edgeBlock} to {_bd}
+	wait a tick
+	# 上段の屋根生成座標を計算したあと，次の段へ！
+	add 1 to {_x1} if {_shape} contains "w"
+	remove 1 from {_x2} if {_shape} contains "e"
+	add 1 to {_z1} if {_shape} contains "n"
+	remove 1 from {_z2} if {_shape} contains "s"
+	setRoofStair({_player}, {_shape}, {_bd}, {_rb}, {_ri}, {_x1}, {_x2}, {_y}+1, {_z1}, {_z2}, {_count}+1, {_weight})
+
+
+
+
+#function setRoofStairs(pl: player, rb: string, ri: item, x1: number, x2: number, y: number, z1: number, z2: number, count:number):
+#	# データエラーチェック
+#	if {_x1} is bigger than or equal to {_x2}:
+#		message "<gold>[S.Bld.]<r> <lime>生成可能限界まで屋根を生成し終わりました。" to {_pl}
+#		set {devRoofLoc1::%{_pl}%} to ""
+#		set {devRoofLoc2::%{_pl}%} to ""
+#		stop
+#	if {_z1} is bigger than or equal to {_z2}:
+#		message "<gold>[S.Bld.]<r> <lime>生成可能限界まで屋根を生成し終わりました。" to {_pl}
+#		set {devRoofLoc1::%{_pl}%} to ""
+#		set {devRoofLoc2::%{_pl}%} to ""
+#		stop
+#	# 4辺にブロック
+#	set {_xNum} to {_x2} - {_x1} - 1
+#	loop {_xNum} times:
+#		set {_x3} to {_x2} - loop-number
+#		setOneBlock(the location at ({_x3}, {_y}, {_z1}) in "world", {_rb}, "[facing=south;half=bottom;shape=straight]")
+#		stop if isNoItem({_pl}, {_ri}) is true
+#		setOneBlock(the location at ({_x3}, {_y}, {_z2}) in "world", {_rb}, "[facing=north;half=bottom;shape=straight]")
+#		stop if isNoItem({_pl}, {_ri}) is true
+#	set {_zNum} to {_z2} - {_z1} - 1
+#	loop {_zNum} times:
+#		set {_z3} to {_z2} - loop-number
+#		setOneBlock(the location at ({_x1}, {_y}, {_z3}) in "world", {_rb}, "[facing=east;half=bottom;shape=straight]")
+#		stop if isNoItem({_pl}, {_ri}) is true
+#		setOneBlock(the location at ({_x2}, {_y}, {_z3}) in "world", {_rb}, "[facing=west;half=bottom;shape=straight]")
+#		stop if isNoItem({_pl}, {_ri}) is true
+#	wait a tick
+#	# 4頂点にブロック
+#	setOneBlock(the location at ({_x1}, {_y}, {_z1}) in "world", {_rb}, "[facing=east;half=bottom;shape=outer_right]")
+#	stop if isNoItem({_pl}, {_ri}) is true
+#	setOneBlock(the location at ({_x2}, {_y}, {_z1}) in "world", {_rb}, "[facing=south;half=bottom;shape=outer_right]")
+#	stop if isNoItem({_pl}, {_ri}) is true
+#	setOneBlock(the location at ({_x1}, {_y}, {_z2}) in "world", {_rb}, "[facing=east;half=bottom;shape=outer_left]")
+#	stop if isNoItem({_pl}, {_ri}) is true
+#	setOneBlock(the location at ({_x2}, {_y}, {_z2}) in "world", {_rb}, "[facing=north;half=bottom;shape=outer_left]")
+#	stop if isNoItem({_pl}, {_ri}) is true
+#	# 次の段へ！
+#	setRoofStairs({_pl}, {_rb}, {_ri}, {_x1}+1, {_x2}-1, {_y}+1, {_z1}+1, {_z2}-1, {_count}+1)
+
+
+on rightclick:
+	# 条件チェック「対象が的ブロック」
+	event-block is archery target block
+	# 単純な条件チェック
+	{devMode::%player%} is "roof"
+	the world is world "world"
+	player is sneaking
+	cancel the event
+	message "%block data of target block%" to player
+
+
+# （関数）アイテムがなければtrueを返す
+function isNoItem(pl: player, ri: item) :: boolean:
+	if {_pl}'s gamemode is survival:
+		remove {_ri} from {_pl}'s inventory
+		if the amount of {_ri} in {_pl}'s inventory < 1:
+			message "<gold>[S.Bld.]<r> <red>アイテム数が足りません。屋根生成を中止しました。" to {_pl}
+			return true
+	return false
+
+
+
+# 【選択範囲の表示】=========================================================
+# 一括設置モードと積み上げモードでの選択ブロックをパーティクルで示す
+# − 0.75秒おきに表示しなおす
+every 15 ticks in "world":
+	# 一括設置モードのパーティクル（炎）
+	loop {selectedLoc::*}:
+		play flame on loop-value
+	# 積み上げモードのパーティクル（魂の炎）
+	loop all players:
+		# 座標が２つ選択されていなければ，処理をしない
+		if {devPileLoc2::%loop-player%} is "":
+			continue
+		# ２座標間に含まれるすべての座標を求める
+		loop all of the blocks within {devPileLoc1::%loop-player%} and {devPileLoc2::%loop-player%}:
+			play soul fire flame on loop-value-2
+	# 屋根モードのパーティクル（ドラゴンブレス）
+	loop all players:
+		# 座標が２つ選択されていなければ，処理をしない
+		if {devRoofLoc2::%loop-player%} is "":
+			continue
+		# ２座標間に含まれるすべての座標を求めるが，パーティクル表示は最も外側のブロックのみ
+		set {_x1} to {devRoofLoc1::%loop-player%}'s x-loc
+		set {_x2} to {devRoofLoc2::%loop-player%}'s x-loc
+		set {_z1} to {devRoofLoc1::%loop-player%}'s z-loc
+		set {_z2} to {devRoofLoc2::%loop-player%}'s z-loc
+		loop all of the blocks within {devRoofLoc1::%loop-player%} and {devRoofLoc2::%loop-player%}:
+			set {_lv} to loop-value-2
+			# skriptが複数の条件チェックをサポートしていないため，以下のようにブサイクな式になる
+			if {_lv}'s x-loc isn't {_x1}:
+				if {_lv}'s x-loc isn't {_x2}:
+					if {_lv}'s z-loc isn't {_z1}:
+						if {_lv}'s z-loc isn't {_z2}:
+							continue
+			play dragon breath on loop-value-2
+
+
+# 【各種のコマンド】=========================================================
+
+command /development <text> [<text="null"> [<text="null"> [<text="null">]]]:
+	description: 建築支援機能についてのコマンド
+	usage: /development clear でブロックの選択を全解除。
+	executable by: players
+	aliases: /develop, /dev, /d
+	trigger:
+		# 第1引数help⇒各種設定の表示
+		if arg-1 is "help" or "h":
+			message "<gold>[S.Bld.]<r> 半自動建築モードは，以下のものが用意されています。" to player
+			message " <gray>●<r> 一括設置モード(select) ⇒ 先に指定した複数座標に，同じブロックを一括設置できます。" to player
+			message " <gray>●<r> 積み上げモード(pile) ⇒ 先に指定した直方体範囲と同じ構造を積み上げます。" to player
+			message " <gray>●<r> 屋根モード(roof) ⇒ 先に指定した長方形範囲を底面として，屋根を生成します。" to player
+			message " <gray>●<r> モードなし(none) ⇒ Minecraftデフォルトの挙動をとります。" to player
+			message "<gold>[S.Bld.]<r> 座標選択では，発動した者の所在地から，以下の半径までに限定されます。" to player
+			message " <gray>●<r> 梁・柱モード ⇒ 半径 <lime>{@limitRadiusLay}<r> ブロック まで" to player
+			message " <gray>●<r> 床・壁モード ⇒ 半径 <lime>{@limitRadiusFace}<r> ブロック まで" to player
+			message " <gray>●<r> 盛土・埋戻モード ⇒ 半径 <lime>{@limitRadiusCapacity}<r> ブロック まで" to player
+			message "<gold>[S.Bld.]<r> 一括設置・消去・ブロック設置は，一度に <red>{@limitLoop}<r> ブロック までに限られています。" to player
+			message "<gold>[S.Bld.]<r> 現在，総計で <lime>%size of {selectedLoc::*}%<r> 個 の座標が選択されています。" to player
+			message "<gold>[S.Bld.]<r> 積み上げでは，一度に指定できる高さと総ブロック数が以下に制限されます。" to player
+			message " <gray>●<r> 高さ ⇒ <lime>{@limitPileHeight}<r> ブロック まで" to player
+			message " <gray>●<r> 容積 ⇒ <lime>{@limitPileVolume}<r> ブロック まで" to player
+			message "<gold>[S.Bld.]<r> 屋根生成では，一度に指定できる広さが以下に制限されます。" to player
+			message " <gray>●<r> 面積 ⇒ <lime>{@limitRoofSize}<r> ブロック まで" to player
+		# 第1引数clear⇒登録している座標を消去する
+		else if arg-1 is "clear" or "c":
+			set {_mode} to {devMode::%player%}
+			# プレイヤーが一括設置モードであるとき
+			if {_mode} is "select":
+				delete {selectedLoc::*}
+				set {devPileLoc2::%player%} to ""
+				broadcast "<gold>[S.Bld.]<r> %player%が <yellow>全てのブロック選択を解除<r> しました。"
+				stop
+			# プレイヤーが積み上げモードであるとき
+			if {_mode} is "pile":
+				set {devPileLoc1::%player%} to ""
+				set {devPileLoc2::%player%} to ""
+				message "<gold>[S.Bld.]<r> <yellow>積み上げモードで登録中の座標をリセットしました。" to player
+				stop
+			# プレイヤーが屋根モードであるとき
+			if {_mode} is "roof":
+				set {devRoofLoc1::%player%} to ""
+				set {devRoofLoc2::%player%} to ""
+				message "<gold>[S.Bld.]<r> <yellow>屋根モードで登録中の座標をリセットしました。" to player
+				stop
+			# プレイヤーがその他のモードであるとき
+			message "<gold>[S.Bld.]<r> <red>現在の建築モードでリセットできるものはありません。" to player
+			stop
+		# 第1引数select⇒一括設置モードに関する指示を出す（今のところ用途なし）
+		#else if arg-1 is "select" or "s":
+		# 第1引数emergency⇒選択座標の探索を強制停止
+		else if arg-1 is "emergency" or "e":
+			set {devEmergency} to true
+			broadcast "<gold>[S.Bld.]<r> %player%が <magenta>自動建築機能を強制停止<r> しました。"
+			wait 5 ticks
+			set {devEmergency} to false
+		# 第1引数mode⇒半自動建築モードの確認・設定
+		else if arg-1 is "mode" or "m":
+			# 第2引数（なし）⇒現在のモードを確認して表示
+			if arg-2 is "null":
+				set {_mode} to {devMode::%player%}
+				if {_mode} is "select":
+					message "<gold>[S.Bld.]<r> あなたの現在の建築モードは <lime>一括設置モード<r> です。" to player
+				else if {_mode} is "pile":
+					message "<gold>[S.Bld.]<r> あなたの現在の建築モードは <lime>積み上げモード<r> です。" to player
+				else if {_mode} is "roof":
+					message "<gold>[S.Bld.]<r> あなたの現在の建築モードは <lime>屋根モード<r> です。" to player
+				else:
+					set {devMode::%player%} to "none"
+					message "<gold>[S.Bld.]<r> あなたの現在の建築モードは <gray>ありません<r>。" to player
+				stop
+			# 第2引数select⇒一括設置モードに設定（＆積み上げ２座標リセット）
+			else if arg-2 is "select" or "s":
+				set {devMode::%player%} to "select"
+				set {devPileLoc1::%player%} to ""
+				set {devPileLoc2::%player%} to ""
+				set {devRoofLoc1::%player%} to ""
+				set {devRoofLoc2::%player%} to ""
+				message "<gold>[S.Bld.]<r> あなたの現在の建築モードを <lime>一括設置モード<r> にしました。" to player
+				stop
+			# 第2引数pile⇒積み上げモードに設定
+			else if arg-2 is "pile" or "stack" or "p":
+				set {devMode::%player%} to "pile"
+				set {devRoofLoc1::%player%} to ""
+				set {devRoofLoc2::%player%} to ""
+				message "<gold>[S.Bld.]<r> あなたの現在の建築モードを <lime>積み上げモード<r> にしました。" to player
+				stop
+			# 第2引数roof⇒屋根モードに設定（＆積み上げ２座標リセット）
+			else if arg-2 is "roof" or "r":
+				set {devMode::%player%} to "roof"
+				set {devPileLoc1::%player%} to ""
+				set {devPileLoc2::%player%} to ""
+				message "<gold>[S.Bld.]<r> あなたの現在の建築モードを <lime>屋根モード<r> にしました。" to player
+				stop
+			# 第2引数none⇒モードなしに設定（＆積み上げ２座標リセット）
+			else if arg-2 is "none" or "n":
+				set {devMode::%player%} to "none"
+				set {devPileLoc1::%player%} to ""
+				set {devPileLoc2::%player%} to ""
+				set {devRoofLoc1::%player%} to ""
+				set {devRoofLoc2::%player%} to ""
+				message "<gold>[S.Bld.]<r> あなたの現在の建築モードを <gray>切りました<r>。" to player
+				stop
+			# 第2引数（その他）⇒エラーメッセージ
+			else:
+				message "<gold>[S.Bld.]<r> <red>指定された建築モードはありません。" to player
+				message " 建築モードの種類は，コマンド <b>/development help<r> でご確認下さい。" to player
+				stop
+		# 第1引数pile⇒積み上げモードに関する指示を出す
+		else if arg-1 is "pile" or "p":
+			# 積み上げモードでない場合は処理を中断
+			if {devMode::%player%} isn't "pile":
+				message "<gold>[S.Bld.]<r> <red>建築モードが積み上げモードに設定されていません。" to player
+				message " まずは，コマンド <b>/delelopment mode pile<r> を実行してください。" to player
+				stop
+			# 第2引数calculate⇒積み上げ範囲にあるブロックの種類とその個数を一覧表示
+			else if arg-2 is "calculate" or "calc" or "count" or "c":
+				# 範囲指定がない場合には，処理を中断して終了
+				if {devPileLoc2::%player%} is "":
+					message "<gold>[S.Bld.] <red>積み上げに必要な座標が指定されていません。" to player
+					message " 座標を2つ選択して直方体の範囲を設定してください。" to player
+					stop
+				loop all of the blocks within {devPileLoc1::%player%} and {devPileLoc2::%player%}:
+					set {_origLoc} to loop-value							# コピー元座標
+					set {_itemOfBlock} to blockToItem({_origLoc})			# ブロックのアイテム名を得る
+					set {_item} to blockToItem(the block at {_origLoc})		# 設置するブロックのアイテム型を取得し...
+					if {_item} is wall torch:								# 一部のアイテムは言い換えてあげないとダメ
+						set {_item} to "torch" parsed as item
+					if {_item} is air or cave air:							# 空気ブロックならばコピー処理せずに飛ばす
+						continue
+					if {_items::kinds::*} doesn't contain {_item}:			# はじめて見つかったアイテムならば，リストにアイテムを追加
+						# message "新規" to player
+						set {_items::kinds::%{_item}%} to {_item}
+						set {_items::count::%{_item}%} to 1
+					else:													# すでにあるアイテムならば，アイテム個数に1加算
+						# message "追加" to player
+						add 1 to {_items::count::%{_item}%}
+				message "<gold>[S.Bld.]<r> 現在の選択範囲にあるブロックの種類と個数は，それぞれ次の通りです。" to player
+				loop {_items::kinds::*}:
+					set {_itemText} to "%loop-value%"					# アイテム型をテキスト型に変換
+					set {_itemStacks} to ""								# ここに，ラージチェストなどの換算個数テキストが入る
+					set {_itemRest} to {_items::count::%loop-index%}	# 計算用のアイテム個数が入る
+					set {_stackNum} to loop-value's max stack			# そのアイテムの最大スタック数を計算
+					# ラージチェスト数計算
+					set {_lc} to rounded down {_itemRest} / (54 * {_stackNum})
+					set {_itemStacks} to " <cyan>%{_lc}%<gray>LC<r> " if {_lc} > 0
+					set {_itemRest} to mod({_itemRest}, 54 * {_stackNum})
+					# スタック数計算
+					set {_stacks} to rounded down {_itemRest} / {_stackNum}
+					set {_itemStacks} to "%{_itemStacks}% <cyan>%{_stacks}%<gray>S<r> " if {_stacks} > 0
+					set {_itemRest} to mod({_itemRest}, {_stackNum})
+					# バラ数計算
+					set {_itemStacks} to "%{_itemStacks}% <cyan>%{_itemRest}%<gray>B<r> " if {_itemRest} > 0
+					message " <gray>●<r> <yellow>%{_itemText}%<r> が <lime>%{_items::count::%loop-index%}%<r> 個 (%{_itemStacks}%)" to player
+				message "<gold>[S.Bld.]<r> 以上。" to player
+			# 第2引数do⇒積み上げる階数を指定して，積み上げを実行
+			else if arg-2 is "do" or "run" or "d":
+				# 第3引数（積み上げ階数）を文字列から数値に変換し自然数の概数にしたあと，それが不正な値の場合，エラーを吐いて終わり
+				set {_arg3} to arg-3 parsed as number
+				set {_floors} to rounded down {_arg3}
+				if {_arg3} < 1:
+					message "<gold>[S.Bld.] <red>積み上げる階数の指定が不正です。<r>自然数を設定してください。" to player
+					stop
+				# 範囲指定がない場合には，処理を中断して終了
+				if {devPileLoc2::%player%} is "":
+					message "<gold>[S.Bld.] <red>積み上げに必要な座標が指定されていません。" to player
+					message " 座標を2つ選択して直方体の範囲を設定してください。" to player
+					stop
+				# 実行して終わり
+				doPile(player, {devPileLoc1::%player%}, {devPileLoc2::%player%}, {_floors})
+				stop
+		# 第1引数roof⇒屋根モードに関する指示を出す
+		else if arg-1 is "roof" or "r":
+			# 積み上げモードでない場合は処理を中断
+			if {devMode::%player%} isn't "roof":
+				message "<gold>[S.Bld.]<r> <red>建築モードが屋根モードに設定されていません。" to player
+				message " まずは，コマンド <b>/delelopment mode roof<r> を実行してください。" to player
+				stop
+			# 第2引数shape⇒屋根の形（傾斜をつくる向き）を方角で指定
+			else if arg-2 is "shape" or "s":
+				# 第3引数は屋根の形を指定するテキストなので，そのまま格納
+				if arg-3 is "null":
+					message "<gold>[S.Bld.]<r> <red>屋根が形を指定されていません。" to player
+					message " 屋根の形をデフォルト（寄棟造）に変更しました。" to player
+					set {devRoofShape::%player%} to "news"
+					stop
+				if arg-3 doesn't contain "n":
+					if arg-3 doesn't contain "e":
+						if arg-3 doesn't contain "w":
+							if arg-3 doesn't contain "s":
+								message "<gold>[S.Bld.]<r> <red>屋根の形を指定する文字列に誤りがあります。" to player
+								message " 屋根の形をデフォルト（寄棟造）に変更しました。" to player
+								set {devRoofShape::%player%} to "news"
+								stop
+				set {devRoofShape::%player%} to arg-3
+				message "<gold>[S.Bld.]<r> 屋根の傾斜をつくる向きを設定しました。" to player
+				stop
+			# 第2引数weight屋根を外周から数えて何ブロックぶん生成するかを設定
+			else if arg-2 is "weight" or "w":
+				# 第3引数（太さ）を文字列から数値に変換し自然数の概数にしたあと，それが不正な値の場合，エラーを吐いて終わり
+				set {_arg3} to arg-3 parsed as number
+				set {_weight} to rounded down {_arg3}
+				if {_arg3} < 0:
+					message "<gold>[S.Bld.] <red>太さの指定が不正です。<r>自然数を設定してください。" to player
+					stop		# 第1引数unlock⇒作業中ロックの強制解除
+				else if {_arg3} = 0:
+					message "<gold>[S.Bld.]<r> 太さを <lime>無限<r> に設定しました。" to player
+					set {devRoofWeight::%player%} to Infinity
+					stop
+				else:
+					message "<gold>[S.Bld.]<r> 太さを <lime>%{_weight}%<r> に設定しました。" to player
+					set {devRoofWeight::%player%} to {_weight}
+					stop
+		else if arg-1 is "unlock" or "u":
+			set {devLock} to false
+			broadcast "<gold>[S.Bld.]<r> %player%が <magenta>作業中ロックを強制キャンセル<r> しました。"
+		# 第1引数（その他）⇒エラーメッセージ
+		else:
+			message "<gold>[S.Bld.]<r> 引数を間違っています。" to player
+
+
+
+
+# 【その他】=========================================================
+
+
+# 設置されている的ブロックを消して，それを使用者に戻してあげる
+function depositBack(player: player, loc: location):
+	delete the block at {_loc}
+	# 的ブロックを消費することでひとつの需要が生まれているようなので，的ブロックを戻す作業をコメントアウト
+	#if {_player}'s gamemode is survival:
+	#	give an archery target block to {_player}
+
+
+
+
+
+# ブロック型を，アイテム型に変換
+function blockToItem(arg-block: block) :: item:
+	set {_item} to type of {_arg-block}
+	#message "<gold>[S.Bld.]<r> <lime>%{_item}%<r>" to player
+	set {_item2} to raw name of {_item}
+	#message "<gold>[S.Bld.]<r> <lime>%{_item2}%<r>" to player
+	set {_item3} to "%{_item}%" parsed as item
+	#message "<gold>[S.Bld.]<r> <lime>%{_item3}%<r>" to player
+	return {_item3}
+
+
+# スクリプトをアンロードするときの処理
+#on script unload:
+#	# 一括設置用の座標を消去
+#	delete {selectedLoc::*}
+#	# 積み上げモード用の座標を消去
+#	delete {devPileLoc1::*}
+#	delete {devPileLoc2::*}
+#	# ロック・緊急コード解除
+#	set {devLock} to false
+#	set {devEmergency} to false
+#	# 全員のモードをなしにする
+#	loop all players:
+#		set {devMode::%loop-player%} to "none"
+
+
+
+
+

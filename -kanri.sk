@@ -1,0 +1,3 @@
+command /kanri:
+	trigger:
+		/quickshop-hikari:quickshop migratefromreremake true true

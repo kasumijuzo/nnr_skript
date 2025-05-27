@@ -1,0 +1,13 @@
+#
+#	名札を持って特定のエンティティを右クリックすると、そのエンティティの現所有者をそのひととして設定する。
+#	2025/02/21 初版
+#
+
+# ウマ、ロバ、ラバ、ゾンビホース、スケルトンホースに限る
+on rightclick holding a name tag on horse or donkey or mule or undead horse or skeleton horse:
+    
+	# そのエンティティの現所有者をそのひととして設定する。
+	set {new_owner::%event-entity%} to player
+
+
+	#send "%{new_owner::%event-entity%}%" to player

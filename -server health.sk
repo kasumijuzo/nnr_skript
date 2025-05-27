@@ -1,0 +1,52 @@
+#  サーバー負荷表示 ＆ 利権値補給ボーナス（v2）
+# ・ベッドにて寝て深い眠りに入ったとき，現在のサーバー負荷を表示してくれる。
+# ・寝てくれた報酬で利権値も補給される。
+
+# ◇■◇定数◇■◇
+# ・備忘：messageなどにoptionsのデータを記載するとき，文字列は%～%ではさむ，数値は%～%ではさまない。
+options:
+	# ヘッダの名前
+	server display name : "&7[&aServer&7]&r"
+	# ベッドで寝てくれた人に加算される利権値
+	value to add on sleep: 200
+
+# プレイヤーが深い眠りに落ちたとき，利権値獲得の権利を得る
+on player deep sleep:
+	make event-player execute command "/health"
+	add the event-player's uuid to {deepSleeper::*}
+
+# プレイヤーがベッドから出たとき，利権値獲得の権利を失う
+on bed leave:
+	wait 1 seconds
+	remove the event-player's uuid from {deepSleeper::*}
+
+# 毎朝6時，権利のある人に利権値を加算
+on at 6:00 in "world":
+	set {_r} to {@value to add on sleep}
+	loop {deepSleeper::*}:
+		set {_p} to player(loop-value)
+		addRights({_p}, {_r})
+	delete {deepSleeper::*}
+
+# サーバーの健康状態を確かめられるコマンド
+command /health:
+	trigger:
+		set {_time} to now formatted as "YYYY年MM月dd日 hh時mm分"
+		set {_tps01} to tps from the last 1 minute
+		set {_tps05} to tps from the last 5 minutes
+		set {_tps15} to tps from the last 15 minutes
+		set {_freeMem} to the server free ram
+		set {_maxMem} to the server max ram
+		set {_ping} to the player's ping
+		set {_players} to the real online player count
+		set {_maxPlayers} to the real max player count
+		message "%{@server display name}% 現在のサーバー負荷状況をお知らせします。" to the player
+		message " <b><u>現在時刻<r>: %{_time}%" to the player
+		message " <b><u>プレイヤー数<r>: %{_players}% / %{_maxPlayers}%" to the player
+		message " <b><u>メモリ<r>: %{_freeMem}% MB / %{_maxMem}% MB" to the player
+		message " <b><u>Tick数<r>: (1分平均)%{_tps01}%tick(s)，(5分平均)%{_tps05}%tick(s)，(15分平均)%{_tps15}%tick(s)" to the player
+		message " <b><u>あなたのPing値<r>: %{_ping}%" to the player
+
+
+
+
