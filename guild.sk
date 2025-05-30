@@ -895,5 +895,64 @@ function jobToJp(id: text):: text:
 
 
 
+# テストのコマンド。オリジナルエンチャントの本を与える
+command /test:
+	trigger:
+		set {_book} to an enchanted_book with lore "&3広域破砕3x3:1000"
+		give {_book} to the player
+
+
+# オリジナルのエンチャントを金床でつけられるようにする
+on anvil prepare:
+	# 条件チェック
+	the slot 0 of the event-inventory is any pickaxe
+	the slot 1 of the event-inventory is an enchanted_book
+	set {_lore} to the line 1 of the slot 1 of the event-inventory's lore
+	{_lore} starts with "&3広域破砕3x3:"
+	# 本処理
+	wait a tick	# 休憩をはさまないと以下のコードがうまく作動しない
+	set {_item} to the slot 0 of the event-inventory
+	force {_item} to start glint
+	set the slot 2 of the event-inventory to {_item} with lore {_lore}
+
+
+# オリジナルエンチャントのついたツールで破砕する場合
+on break:
+	# 条件チェック
+	# ？破砕に使ったツールに，オリジナルのエンチャント「広域破砕」がついている
+	set {_lore} to the line 1 of the player's tool's lore
+	broadcast {_lore}
+	{_lore} starts with "&3広域破砕3x3:"
+	# 本処理
+	cancel the event
+	# エンチャントのチャージ数を数える
+	set {_rest} to getRemainingAmountFromOriginalEnchantment({_lore},"&3広域破砕3x3:")
+	# 半径2mのブロックを破砕（ここはテスト実証のため後で変更）
+	# 同時に，ツールの耐久値とチャージカウントを減らす
+	loop blocks in radius 2 around the event-block:
+		break loop-block using player's tool
+		remove 1 from the durability of the player's tool
+		remove 1 from {_rest}
+	# ツールの耐久値が0以下ならば手動でツールをぶち壊す
+	if the durability of the player's tool <= 0:
+		delete the player's tool
+		play sound "entity.item.break" with volume 0.8 for the player
+	# オリジナルエンチャントに書いてあるチャージカウントを書き換える。
+	# 0以下の場合はエンチャント名（コメント）を消す。
+	set the line 1 of the player's tool's lore to concat("&3広域破砕3x3:",{_rest})
+	if {_rest} <= 0:
+		delete the line 1 of the player's tool's lore
+
+
+# オリジナルエンチャントからチャージ数を得る
+function getRemainingAmountFromOriginalEnchantment(lore: text, ench: text):: number:
+	set {_loreLength} to length of {_lore}
+	set {_enchLength} to length of {_ench}
+	set {_part} to substring of {_lore} from ({_enchLength} + 1) to ({_loreLength})
+	return {_part} parsed as number
+
+
+
+
 
 
