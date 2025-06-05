@@ -916,21 +916,44 @@ on anvil prepare:
 	set the slot 2 of the event-inventory to {_item} with lore {_lore}
 
 
+
+# 下の「3x3掘削」を実現するために，ブロックを殴り始めた瞬間に，その殴った面（上下東西南北）を記録
+on leftclick:
+	# 条件チェックなし
+	# 本処理
+	set {_pid} to the player's uuid
+	set {guild::latestPunchedDirection::%{_pid}%} to the event-direction
+
+
+
+
+
+
 # オリジナルエンチャントのついたツールで破砕する場合
 on break:
 	# 条件チェック
 	# ？破砕に使ったツールに，オリジナルのエンチャント「広域破砕」がついている
 	set {_lore} to the line 1 of the player's tool's lore
-	broadcast {_lore}
 	{_lore} starts with "&3広域破砕3x3:"
 	# 本処理
 	cancel the event
 	# エンチャントのチャージ数を数える
 	set {_rest} to getRemainingAmountFromOriginalEnchantment({_lore},"&3広域破砕3x3:")
-	# 半径2mのブロックを破砕（ここはテスト実証のため後で変更）
-	# 同時に，ツールの耐久値とチャージカウントを減らす
-	loop blocks in radius 2 around the event-block:
-		break loop-block using player's tool
+	# 掘削したブロックを中心に，3x3x1の9ブロックを配列として取得
+	set {_x} to the event-block's x-loc
+	set {_y} to the event-block's y-loc
+	set {_z} to the event-block's z-loc
+	set {_pid} to the player's uuid
+	if {guild::latestPunchedDirection::%{_pid}%} is above or below:
+		set {_breaking::*} to the blocks within location({_x}-1,{_y},{_z}-1, event-world) and location({_x}+1,{_y},{_z}+1, event-world)
+	else if {guild::latestPunchedDirection::%{_pid}%} is east or west:
+		set {_breaking::*} to the blocks within location({_x},{_y}-1,{_z}-1, event-world) and location({_x},{_y}+1,{_z}+1, event-world)
+	else if {guild::latestPunchedDirection::%{_pid}%} is south or north:
+		set {_breaking::*} to the blocks within location({_x}-1,{_y}-1,{_z}, event-world) and location({_x}+1,{_y}+1,{_z}, event-world)
+	delete {guild::latestPunchedDirection::%{_pid}%}
+	# ツールの耐久値とチャージカウントを減らす
+	loop {_breaking::*}:
+		break loop-value using player's tool
 		remove 1 from the durability of the player's tool
 		remove 1 from {_rest}
 	# ツールの耐久値が0以下ならば手動でツールをぶち壊す
