@@ -1,0 +1,130 @@
+# ◇■◇オプション◇■◇
+options:
+	#手形の利権値
+	pay rights : 1000
+	#譲渡手数料
+	pay rights tax : 0
+	#譲渡を行うための最低保有金額
+	pay rights min : 1
+	#譲渡を受けるための最高保有金額+1
+	pay rights max : 100000
+	#譲渡金額
+	pay money : 100
+
+	# 労働局の名称
+	#guild display name : "&7[&aArbeitsamt&7]&r"
+
+
+
+#利権値を譲渡するコマンド。
+#現在は不使用
+command /rightspay <player>:
+	trigger:
+		message "このコマンドは現在使われていません。" to player
+		stop
+		
+		#引数のプレイヤ名をローカル変数にする
+		set {_p} to arg-1
+
+		#条件を調べる
+
+		#条件1：自身の利権値が、最低保有金額以上
+		if {guild::jobRights::%the player's uuid%} < {@pay rights min} :
+			message "利権値が足りません。譲渡するには、最低でも {@pay rights min} が必要です。" to player
+			message "あなたの利権値は %{guild::jobRights::%the player's uuid%}% です。" to player
+			stop
+
+
+		#譲渡を行った人の利権値を減らす
+		addRights(player, -1 * {@pay rights})
+
+
+		#譲渡を行った人の利権値を増やす
+		addRights({_p}, {@pay rights} - {@pay rights tax})
+
+		message "%{_p}% に利権値を {@pay rights} 譲渡しました。ただし、うち {@pay rights tax} は手数料です。" to player
+		message "あなたの利権値は%{guild::jobRights::%the player's uuid%}%です。" to player
+
+
+		set {_joto} to {@pay rights} - {@pay rights tax}
+
+		message "%player% から利権値を %{_joto}% 譲渡されました。" to {_p}
+		message "あなたの利権値は%{guild::jobRights::%{_p}'s uuid%}%です。" to {_p}
+		
+
+#利権値を煮詰めた物体を生成する
+command /tegata [<number=1>]:
+	trigger:
+		#指定した利権値分を変換する
+		set {_t} to arg-1
+		set {_t} to {_t} * 1000
+		while {_t} >= 1000:
+			#現在の利権値を確認する。
+			#set {_changed} to {guild::jobRights::%the player's uuid%}
+
+			#利権値が足りない場合は処理を中止
+			if {guild::jobRights::%the player's uuid%} < {@pay rights}:
+				message "<red>利権値が足りません。" to player
+				message "利権手形は {@pay rights} 必要ですが、あなたの利権値は %{guild::jobRights::%the player's uuid%}% です。" to player
+				stop
+		
+			#アイテム変換を行う人の利権値を減らす
+			addRights(player, -1 * {@pay rights})
+
+
+			#利権値に100万を加えた値を、カスタムモデルデータの値にする
+			set {_cmd} to {@pay rights} + 1000000
+
+			#利権棒を与える
+			give a stick with custom model data {_cmd} with name "<aqua>利権手形" to the player
+
+
+			#利権値を変換したことをプレイヤーに知らせなきゃ
+			message "利権値を {@pay rights} いけにえにし、アイテムを生成しました。" to player
+			message "あなたの利権値は%{guild::jobRights::%the player's uuid%}%です。" to player
+
+			#残り変換分から、今変換した分を引く
+			add -1 * {@pay rights} to {_t}
+			
+			#少し待つ
+			wait 0.1 second
+		
+		#端数を指定した場合は、警告して終了
+		#message "端数なく「利権値」を指定して下さい。（最低 {@pay rights} ） " to player
+
+
+#利権値を煮詰めた物体を利権値に変換する
+on rightclick on air:
+
+	#[条件]物体を手に持っている
+	event-item' name contains "<aqua>利権手形"
+
+	#現在の利権値を確認する。
+	set {_changed} to {guild::jobRights::%the player's uuid%}
+
+	#カスタムモデルデータから利権値を取得する。
+	set {_cmd} to custom model data of event-item
+	add -1000000 to {_cmd}
+
+	#利権値を増やす
+	addRights(player, {_cmd} )
+
+	#確認した利権値と今の利権値が同じなら、中止
+	#add -1 * {guild::jobRights::%the player's uuid%} to {_changed}
+	if {_changed} = {guild::jobRights::%the player's uuid%}:
+		message "<red>利権値はすでに上限値です。" to player
+		message "あなたの利権値は %{guild::jobRights::%the player's uuid%}% です。" to player
+		stop
+
+	#物体を消す
+	remove 1 of event-item from player
+
+	message "アイテムを消費し、利権値を %{guild::jobRights::%the player's uuid%} - {_changed}% 回復しました。" to player
+	message "あなたの利権値は%{guild::jobRights::%the player's uuid%}%です。" to player
+
+
+
+
+
+
+

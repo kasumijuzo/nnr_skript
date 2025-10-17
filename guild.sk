@@ -2,7 +2,10 @@
 #	2025/04/12 skript 2.10.2に対応（エイリアスの追加、「on rightclick」の記載方法の変更）
 
 
-# ◇■◇別名一覧◇■◇
+# ◇■◇別名一覧（レガシ）◇■◇
+# (25/10/06)将来エイリアス機能が消えるかもしれない。
+# 対処法のリンクをここに貼っておく。
+# https://github.com/SkriptLang/Skript/discussions/7349
 aliases:
 
 	#各種のテラコッタ
@@ -22,18 +25,94 @@ aliases:
 	# 各種のクワ
 	any hoe = wooden_hoe , stone_hoe , iron_hoe , diamond_hoe , golden_hoe , netherite_hoe
 
-
-	# 土工のシャベル特効ブロック 粘土、粗い土、耕地、草ブロック・土、砂利、菌糸、ポドゾル、赤い砂、砂、ソウルサンド、草の道、雪ブロック
-	digdig     = clay, coarse dirt, farmland, grass block, dirt, gravel, mycelium, podzol, red sand, sand, soul sand, dirt path, snow block
-	# 土工のつるはし特効ブロック 赤い砂岩，砂岩
-	digdigpick = red sandstone, sandstone
-	# 坑夫の特効ブロック 石、丸石、安山岩、閃緑岩、花崗岩、黒曜石、ネザーラック、深層岩，方解石，ブラックストーン
-	minemine   = stone, cobblestone, andesite, diorite, granite, obsidian, magma block, netherrack, deepslate, cobbled deepslate, calcite, blackstone
 	# 左官の特効ブロック 各種のテラコッタ，各種のコンクリート
 	plastplast = any terracotta, any concrete
 	# 樵夫の特効ブロック 各種の原木
 	cutcut = any log, stripped crimson stem, stripped warped stem
 
+
+
+
+on load:
+	# -------------------------------------------------------------------------------
+	# ◇■◇別名一覧◇■◇
+	# ・Skriptで廃止される「エイリアス」に代わって，Minecraft平坦化に伴って公式に導入された「タグ」を利用するよう，SkriptLangから案内があった。
+	# ・わかりやすい「タグ」一覧はこちら。
+	# 　・ブロック： https://mcreator.net/wiki/minecraft-block-tags-list
+	# 　・アイテム： https://mcreator.net/wiki/minecraft-item-tags-list
+	# ・なければここで定義。
+	# -------------------------------------------------------------------------------
+	# 広域採掘エンチャントにて破壊対象となるブロック。
+	register a block tag named "wide_mining_breakable" using cobblestone, sandstone, nether_brick, stone_bricks, bricks, purpur_block, quartz, red_sandstone, prismarine_bricks, prismarine, dark_prismarine, polished_granite, smooth_red_sandstone, mossy_stone_bricks, polished_diorite, mossy_cobblestone, end_stone_bricks, stone, smooth_sandstone, smooth_quartz, granite, andesite, red_nether_bricks, polished_andesite, diorite, blackstone, polished_blackstone_bricks, polished_blackstone, cobbled_deepslate, polished_deepslate, deepslate_tiles, deepslate_bricks, oxidized_cut_copper, weathered_cut_copper, exposed_cut_copper, cut_copper, waxed_weathered_cut_copper, waxed_exposed_cut_copper, waxed_cut_copper, waxed_oxidized_cut_copper, mud_bricks, deepslate and tuff
+	# 坑夫が「倍数ドロップ」エンチャントのついた道具で採掘した場合に，ドロップが4倍量となるブロック。
+	# ・石，丸石，安山岩，閃緑岩，花崗岩，黒曜石，ネザーラック，深層岩，方解石，ブラックストーン（ここまで，旧・minemine）
+	# ・粘土，粗い土，耕地，草ブロック，土，砂利，菌糸，ポドゾル，赤い砂，砂，ソウルサンド，草の道，雪ブロック（ここまで，旧・digdig）
+	# ・赤い砂岩，砂岩（ここまで，旧・digdigpick）
+	# ・凝灰岩
+	register a block tag named "miner_mining_specials" using stone, cobblestone, andesite, diorite, granite, obsidian, magma block, netherrack, deepslate, cobbled deepslate, calcite, blackstone, clay, coarse dirt, farmland, grass block, dirt, gravel, mycelium, podzol, red sand, sand, soul sand, dirt path, snow block, red sandstone, sandstone and tuff
+	# 左官が「倍数ドロップ」エンチャントのついた道具で採掘した場合に，ドロップが4倍量となるブロック。
+	# ・各種のテラコッタ，各種のコンクリート（ここまで，旧・plastplast）
+	register a block tag named "plasterwork_mining_specials" using terracotta, white_terracotta, orange_terracotta, magenta_terracotta, light_blue_terracotta, yellow_terracotta, lime_terracotta, pink_terracotta, gray_terracotta, light_gray_terracotta, cyan_terracotta, purple_terracotta, blue_terracotta, brown_terracotta, green_terracotta, red_terracotta, black_terracotta, white_concrete, orange_concrete, magenta_concrete, light_blue_concrete, yellow_concrete, lime_concrete, pink_concrete, gray_concrete, light_gray_concrete, cyan_concrete, purple_concrete, blue_concrete, brown_concrete, green_concrete, red_concrete and black_concrete
+	# -------------------------------------------------------------------------------
+	# ◇■◇職業の定義◇■◇
+	# -------------------------------------------------------------------------------
+	delete {jobs::*}		# .skファイルを読み込み時，一度データを消した上で再定義
+	# (無職の定義)
+	set {jobs::unemployed::name} to "無職"
+	set {jobs::unemployed::color} to "&7"
+	set {jobs::unemployed::changeDescription} to "失職します。何もメリットはありません。"
+	add " &7●&r 職のない状態です。何のメリットもありません。" to {jobs::unemployed::descriptions::*}
+	# (樵夫の定義)
+	set {jobs::lumberjack::name} to "樵夫"
+	set {jobs::lumberjack::color} to "&a"
+	set {jobs::lumberjack::changeDescription} to "木材生産に有利な樵夫（木こり）に転職できます。"
+	add " &7●&r 当職に就くと，いわゆる「CutAll」を使用できます。" to {jobs::lumberjack::descriptions::*}
+	add "  斧で原木を破壊することで，1本の木をまるごと伐採できます。" to {jobs::lumberjack::descriptions::*}
+	add "  （斧には専用エンチャントが必要です）" to {jobs::lumberjack::descriptions::*}
+	set {_pjrl} to {@per job rights lumberjack cutall}
+	add "  CutAll利権を利用するごとに，利権値が &c%{_pjrl}%&r 消費されます。" to {jobs::lumberjack::descriptions::*}
+	# (坑夫の定義)
+	set {jobs::miner::name} to "坑夫"
+	set {jobs::miner::color} to "&e"
+	set {jobs::miner::changeDescription} to "土砂や石材の生産に有利な坑夫に転職できます。"
+	add " &7●&r 当職に就くと，ツルハシで採集できる石材採集量がx4になります。" to {jobs::miner::descriptions::*}
+	add "  （ツルハシには専用エンチャントが必要です）" to {jobs::miner::descriptions::*}
+	set {_pjrm} to {@per job rights miner mining}
+	add "  倍数ドロップ利権を利用するごとに，利権値が &c%{_pjrm}%&r 消費されます。" to {jobs::miner::descriptions::*}
+	add " &7●&r 広域掘削利権を，利権値の消費なしでご利用いただけます。" to {jobs::miner::descriptions::*}
+	# (左官の定義)
+	set {jobs::plasterwork::name} to "左官"
+	set {jobs::plasterwork::color} to "&b"
+	set {jobs::plasterwork::changeDescription} to "高級建材の生産に有利な左官に転職できます。"
+	set {jobs::plasterwork::description} to "左官"
+	add " &7●&r 当職に就くと，ツルハシで採集できるテラコッタと" to {jobs::plasterwork::descriptions::*}
+	add "  コンクリートがx3になります。" to {jobs::plasterwork::descriptions::*}
+	add "  （ツルハシには専用エンチャントが必要です）" to {jobs::plasterwork::descriptions::*}
+	set {_pjrp} to {@per job rights plasterwork mining}
+	add "  倍数ドロップ利権を利用するごとに，利権値が &c%{_pjrp}%&r 消費されます。" to {jobs::plasterwork::descriptions::*}
+	add " &7●&r 環境なしにどこでもコンクリートが生産可能な「簡易生成」が可能です。" to {jobs::plasterwork::descriptions::*}
+	set {_rights} to {@per rights on marchant powder to concrete}
+	add "  簡易生成利権を利用するごとに，利権値が &c%{_rights}%&r 消費されます。" to {jobs::plasterwork::descriptions::*}
+	# -------------------------------------------------------------------------------
+	# ◇■◇エンチャント 及び エンチャントの対象となる武器道具の定義◇■◇
+	# ・ゲーム中のエンチャント実体は，データパック内で設定すること
+	# -------------------------------------------------------------------------------
+	delete {uniqueEnchants::*}	# .skファイルを読み込み時，一度データを消した上で再定義
+	# 独自エンチャントの種類とエンチャントされる武器や道具
+	set {uniqueEnchants::enchantable::*} to "cut_all", "gunslash", "special_drop", "wide_cultivate", "wide_harvest" and "wide_mining"
+	set {uniqueEnchants::enchanted::*} to "axe", "boots", "chestplate", "helmet", "hoe", "leggings", "pickaxe", "shovel", "sword" and "shears"
+	# -------------------------------------------------------------------------------
+	# ◇■◇独自エンチャントの付与されたアイテムのデフォルト名◇■◇
+	# -------------------------------------------------------------------------------
+	delete {defaultBrand::*}	# .skファイルを読み込み時，一度データを消した上で再定義
+	set {defaultBrand::cut_all::axe} to "<material>のチェーンソー"
+	set {defaultBrand::gunslash::sword} to "<material>の銃剣"
+	set {defaultBrand::gunslash::axe} to "<material>の銃斧"
+	set {defaultBrand::special_drop::pickaxe} to "<material>の玄能と鉄矢"
+	set {defaultBrand::special_drop::shovel} to "<material>の紐付きショベル"
+	set {defaultBrand::wide_cultivate::hoe} to "<material>の備中グワ"
+	set {defaultBrand::wide_harvest::shears} to "鎌"
+	set {defaultBrand::wide_mining::pickaxe} to "<material>のドリル"
 
 
 # ◇■◇オプション◇■◇
@@ -46,13 +125,12 @@ options:
 	# 蓄積される利権数の最大値
 	max job rights: 100000
 	# 利権を1回行使するごとに消費される利権数（職種別）
-	per job rights lumberjack: 100
-	per job rights earthwork: 50
-	per job rights miner: 50
-	per job rights plasterwork: 50
+	per job rights lumberjack cutall: 100		# 樵夫がカットオール利権を行使した場合
+	per job rights miner mining: 50					# 坑夫が倍数ドロップ利権を行使した場合
+	per job rights plasterwork mining: 50		# 左官が倍数ドロップ利権を行使した場合
+	per job rights wide mining: 20					# （坑夫以外が）広域採掘利権を行使した場合（1レベル1ブロックあたり）
 	# 特殊な取引時にかかる利権値
 	per rights on marchant powder to concrete: 250		# ①コンクリートの簡易生成
-	per rights on manufacture weapon: 5000						# ③工匠による仕事道具（武器系統）の生産
 	# 遡って給付が行われる最大日数
 	days max G : 100000
 
@@ -60,9 +138,9 @@ options:
 # ◇■◇変数の初期値◇■◇
 # ・各プレイヤーの初回ログイン時に設定する。variablesは使用しない（うまくいかない）。
 on first join:
-	set {guild::lastJobChangeDay::%the player's uuid%} to 0		# 前回に仕事を変更した日
-	set {guild::jobRights::%the player's uuid%} to 50000			# 保有利権値
-	set {guild::job::%the player's uuid%} to "unemployed"			# 職業
+	set {guild::lastJobChangeDay::%the player's uuid%} to 0				# 前回に仕事を変更した日
+	set {guild::jobRights::%the player's uuid%} to 50000					# 保有利権値
+	set {guild::job::%the player's uuid%} to "unemployed"					# 職業
 	set {guild::openedMerchantType::%the player's uuid%} to ""		# 現在開いている交易ウィンドウのタイプ
 
 
@@ -120,6 +198,7 @@ command /guild <string=wizard> [<string=null> [<string=null> <string=null>]]:
 				#add {_c} to {_m::*}
 				#add to a new text component from " ）" to {_m::*}
 				set {_c} to a new text component from " ）"
+				add {_c} to {_m::*}
 				set {_l} to merge components {_m::*}
 				send component {_l} to the player
 				delete {_m::*}
@@ -168,81 +247,52 @@ command /guild <string=wizard> [<string=null> [<string=null> <string=null>]]:
 				stop
 			# 第2引数"null"→転職ウィザードの表示
 			else if {_action} is "change":
-				# 1行目
+				# 1～2行目
 				message "%{@guild display name}% 転職をご希望ですね。新しい職種を選んで下さい。" to the player
-				message "%{@guild display name}% 現在の%player%の職業は %jobToJp({guild::job::%player's uuid%})% です。" to the player # 2025/3/16 ぎまっち追加 転職前に現在の職業を表示
-				# 2行目
+				set {_jobNow} to {guild::job::%player's uuid%}
+				message " &7現在のあなたの職業は%{jobs::%{_jobNow}%::color}% %jobToJp({_jobNow})% &7です。" to the player # 2025/3/16 ぎまっち追加 転職前に現在の職業を表示
+				# 3行目：職業リストを読み出して，各職業へ転職できるリンクを生成して返す
 				add a new text component from " &7> " to {_m::*}
-				set {_c} to a new text component from "&a&n樵夫&r"
-				set click event of {_c} to a new click event to run command "/guild change lumberjack"
-				set hover event of {_c} to a new hover event showing "森林伐採に有利な樵夫に転職できます。"
-				add {_c} to {_m::*}
-				add a new text component from " " to {_m::*}	# ただの空白
-				set {_c} to a new text component from "&e&n工匠&r"
-				set click event of {_c} to a new click event to run command "/guild change craftsman"
-				set hover event of {_c} to a new hover event showing "ツール生産に有利な工匠に転職できます。"
-				add {_c} to {_m::*}
-				add a new text component from " " to {_m::*}	# ただの空白
-				set {_c} to a new text component from "&9&n坑夫&r"
-				set click event of {_c} to a new click event to run command "/guild change miner"
-				set hover event of {_c} to a new hover event showing "土砂採掘に有利な坑夫に転職できます。"
-				add {_c} to {_m::*}
-				add a new text component from " " to {_m::*}	# ただの空白
-				set {_c} to a new text component from "&b&n左官&r"
-				set click event of {_c} to a new click event to run command "/guild change plasterwork"
-				set hover event of {_c} to a new hover event showing "高級建材生産に有利な左官に転職できます。"
-				add {_c} to {_m::*}
-				add a new text component from " " to {_m::*}	# ただの空白
-				set {_c} to a new text component from "&7&n無職&r"
-				set click event of {_c} to a new click event to run command "/guild change"
-				set hover event of {_c} to a new hover event showing "無職になります。特にいいことはありません。"
-				add {_c} to {_m::*}
+				set {_j::*} to the indexes of {jobs::*}
+				loop {_j::*}:
+					set {_color} to {jobs::%loop-value%::color}							# 職業リストから，テキスト装飾用カラーコードを取得。
+					set {_name} to {jobs::%loop-value%::name}								# 職業リストから，職業の日本語名を取得。
+					set {_desc} to {jobs::%loop-value%::changeDescription}	# 職業リストから，転職時の説明文を取得。
+					set {_c} to a new text component from "%{_color}%&n%{_name}%&r"
+					set click event of {_c} to a new click event to run command "/guild change %loop-value%"
+					set hover event of {_c} to a new hover event showing "%{_desc}%"
+					add {_c} to {_m::*}
+					add a new text component from " " to {_m::*}	# ただの空白
+				# (最後にテキストコンポーネントを統合して表示)
 				set {_l} to merge components {_m::*}
 				send component {_l} to the player
 				delete {_m::*}
 				stop
 			# 第2引数"help"→ヘルプウィザードの表示
 			else if {_action} is "help":
-				# 1行目
-				message "%{@guild display name}% 職業や利権について，何をお知りになりたいですか。" to the player
-				message "%{@guild display name}% 現在の%player%の職業は %jobToJp({guild::job::%player's uuid%})% です。" to the player # 2025/3/16 ぎまっち追加 転職前に現在の職業を表示
-				# 2行目
+				# 1～2行目
+				message "%{@guild display name}% 職業や利権について，知りたい内容をクリックしてください。" to the player
+				set {_jobNow} to {guild::job::%player's uuid%}
+				message " &7現在のあなたの職業は%{jobs::%{_jobNow}%::color}% %jobToJp({_jobNow})% &7です。" to the player # 2025/3/16 ぎまっち追加 転職前に現在の職業を表示
+				# 3行目：職業リストを読み出して，概要説明 及び 各職業の説明を表示するリンクを生成して返す
 				add a new text component from " &7> " to {_m::*}
-				set {_c} to a new text component from "&b&n職業・利権システムの概要を知りたい&r"
+				# (概要説明)
+				set {_c} to a new text component from "&f&n概要説明&r"
 				set click event of {_c} to a new click event to run command "/guild help"
+				set hover event of {_c} to a new hover event showing "職業・利権システムについての概要を知りたい"
 				add {_c} to {_m::*}
-				set {_l} to merge components {_m::*}
-				send component {_l} to the player
-				delete {_m::*}
-				# 3行目
-				add a new text component from " &7> " to {_m::*}
-				set {_m::2} to a new text component from "&b&n樵夫という職業について知りたい&r"
-				set click event of {_m::2} to a new click event to run command "/guild help lumberjack"
-				add {_c} to {_m::*}
-				set {_l} to merge components {_m::*}
-				send component {_l} to the player
-				delete {_m::*}
-				# 4行目
-				add a new text component from " &7> " to {_m::*}
-				set {_m::2} to a new text component from "&b&n工匠という職業について知りたい&r"
-				set click event of {_m::2} to a new click event to run command "/guild help craftsman"
-				add {_c} to {_m::*}
-				set {_l} to merge components {_m::*}
-				send component {_l} to the player
-				delete {_m::*}
-				# 5行目
-				add a new text component from " &7> " to {_m::*}
-				set {_m::2} to a new text component from "&b&n坑夫という職業について知りたい&r"
-				set click event of {_m::2} to a new click event to run command "/guild help miner"
-				add {_c} to {_m::*}
-				set {_l} to merge components {_m::*}
-				send component {_l} to the player
-				delete {_m::*}
-				# 6行目
-				add a new text component from " &7> " to {_m::*}
-				set {_m::2} to a new text component from "&b&n左官という職業について知りたい&r"
-				set click event of {_m::2} to a new click event to run command "/guild help plasterwork"
-				add {_c} to {_m::*}
+				add a new text component from " " to {_m::*}	# ただの空白
+				# (各職業の説明：ループで生成)
+				set {_j::*} to the indexes of {jobs::*}
+				loop {_j::*}:
+					set {_color} to {jobs::%loop-value%::color}							# 職業リストから，テキスト装飾用カラーコードを取得。
+					set {_name} to {jobs::%loop-value%::name}								# 職業リストから，職業の日本語名を取得。
+					set {_c} to a new text component from "%{_color}%&n%{_name}%&r"
+					set click event of {_c} to a new click event to run command "/guild help %loop-value%"
+					set hover event of {_c} to a new hover event showing "%{_name}%という職業について詳しく知りたい"
+					add {_c} to {_m::*}
+					add a new text component from " " to {_m::*}	# ただの空白
+				# (最後にテキストコンポーネントを統合して表示)
 				set {_l} to merge components {_m::*}
 				send component {_l} to the player
 				delete {_m::*}
@@ -254,40 +304,30 @@ command /guild <string=wizard> [<string=null> [<string=null> <string=null>]]:
 		# 第1引数"help"→ヘルプを表示◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆
 		else if {_order} is "help":
 			set {_job} to arg-2
-			if {_job} is "lumberjack":
-				message "%{@guild display name}% 職業「樵夫」についてご説明します。" to the player
-				message " &8・&r 当職に就くと，いわゆる「CutAll」を使用できます。" to the player
-				message "  斧で原木を破壊することで，1本の木をまるごと伐採できます。" to the player
-				set {_pjrl} to {@per job rights lumberjack}
-				message " &8・&r CutAll機能を利用するごとに，利権値が &c%{_pjrl}%&r 消費されます。" to the player
-			else if {_job} is "craftsman":
-				message "%{@guild display name}% 職業「工匠」についてご説明します。" to the player
-				message " &8・&r （stub）。" to the player
-				set {_pjre} to {@per job rights earthwork}
-				message " &8・&r 利権を利用するごとに，利権値が &c%{_pjre}%&r 消費されます。" to the player
-			else if {_job} is "miner":
-				message "%{@guild display name}% 職業「坑夫」についてご説明します。" to the player
-				message " &8・&r 当職に就くと，ツルハシで採集できる石材採集量がx4になります。" to the player
-				set {_pjrm} to {@per job rights miner}
-				message " &8・&r 利権を利用するごとに，利権値が &c%{_pjrm}%&r 消費されます。" to the player
-			else if {_job} is "plasterwork":
-				message "%{@guild display name}% 職業「左官」についてご説明します。" to the player
-				message " &8・&r 当職に就くと，ツルハシで採集できるテラコッタとコンクリートがx3になります。" to the player
-				set {_pjrp} to {@per job rights plasterwork}
-				message " &8・&r 利権を利用するごとに，利権値が &c%{_pjrp}%&r 消費されます。" to the player
+			# 第2引数が，いずれかの職業IDと一致した場合，その職業の説明を表示
+			if indexes of {jobs::*} contains {_job}:
+				set {_name} to {jobs::%{_job}%::name}			# 職業リストから，職業の日本語名を取得。
+				set {_color} to {jobs::%{_job}%::color}		# 職業リストから，テキスト装飾用カラーコードを取得。
+				message "%{@guild display name}% 職業%{_color}%「%{_name}%」&rについてご説明します。" to the player
+				loop {jobs::%{_job}%::descriptions::*}:
+					message loop-value to the player
+			# 第2引数が，いずれの職業IDとも一致しなかった場合，その概要説明を表示
 			else:
 				message "%{@guild display name}% 職業システムについてご説明します。" to the player
-				message " &8・&r 当システムは，資源採集の高速化を実現するものです。" to the player
-				message " &8・&r 職業は「樵夫&7（lumberjack）&r」，「工匠&7（craftsman）&r」" to the player
-				message "  「坑夫&7（miner）&r」「左官&7（plasterwork）&r」の4つがございます。" to the player
-				message "  詳しくはコマンド &l/guild help <職業ID>&r をご入力ください。" to the player
-				message " &8・&r 建材採集時に発動する特殊技を &l&b利権&r と称します。" to the player
+				message " &7●&r 当システムは，資源採集の高速化を実現するものです。" to the player
+				message " &7●&r 就くことのできる職業は，以下の通りです。" to the player
+				set {_j::*} to the indexes of {jobs::*}
+				loop {_j::*}:
+					set {_color} to {jobs::%loop-value%::color}		# 職業リストから，テキスト装飾用カラーコードを取得。
+					set {_name} to {jobs::%loop-value%::name}			# 職業リストから，職業の日本語名を取得。
+					message " &7 ○%{_color}% %{_name}% &r(%loop-value%)" to the player
+				message " &7●&r 建材採集時に発動する特殊技を &l&b利権&r と称します。" to the player
 				message "  利権を利用すると，一定の &l&b利権値&r を消費します。" to the player
 				set {_jrd} to {@job rights on day}
 				set {_mjr} to {@max job rights}
 				message "  利権は日ごとに &a%{_jrd}%&r ずつ補充され，最大 &a%{_mjr}%&r まで貯まります。" to the player
 				message "  現在のあなたの利権値は &a%{guild::jobRights::%the player's uuid%}%&r です。" to the player
-				message " &8・&r 転職には，コマンド &l/guild change <職業ID>&r を入力します。" to the player
+				message " &7●&r 転職には，コマンド &l/guild change <職業ID>&r を入力します。" to the player
 				message "  一度転職したあとは，&430日間は転職ができません&rのでご注意ください。" to the player
 				# ▼日数差計算
 				set {_today} to floor(unix timestamp of now / 86400)	# 本日を求める
@@ -387,9 +427,89 @@ command /guild <string=wizard> [<string=null> [<string=null> <string=null>]]:
 
 
 
+# 【コマンド】エンチャント時に自動設定する名前を登録／削除／確認する
+# （引数）登録（set）／削除(delete)／確認(show)，エンチャントのID，エンチャントされる道具のID，命名
+command /autobrand <string> [<string> [<string> [<string> [<string>]]]]:
+	trigger:
+		set {_player} to the player
+		set {_pid} to {_player}'s uuid
+		set {_order} to arg-1
+		# 第1引数"set"->エンチャント時の自動命名を設定
+		# 第1引数"delete"->エンチャント時の自動命名を消去
+		# 以下，2引数の共通処理
+		if {_order} is "set" or "delete":
+			# 条件チェック・エラーメッセージ
+			# 引数2: エンチャントのID
+			if arg-2 isn't set:
+				message "%{@guild display name}% &4エンチャントIDが設定されていません。" to {_player}
+				exit
+			set {_enchantable} to arg-2
+			if {uniqueEnchants::enchantable::*} don't contain {_enchantable}:
+				message "%{@guild display name}% &4不正なエンチャントIDが設定されています。" to {_player}
+				exit
+			# 引数3: エンチャントされる道具のID
+			else if arg-3 isn't set:
+				message "%{@guild display name}% &4エンチャントされる道具のIDが設定されていません。" to {_player}
+				exit
+			set {_enchanted} to arg-3
+			if {uniqueEnchants::enchanted::*} don't contain {_enchanted}:
+				message "%{@guild display name}% &4不正なエンチャントされる道具のIDが設定されています。" to {_player}
+				exit
+			# これより，第1引数"delete"の単独処理->処理終了
+			if {_order} is "delete":
+				delete {guild::brand::%{_pid}%::%{_enchantable}%::%{_enchanted}%::*}
+				message "%{@guild display name}% &e%{_enchanted}% &rに &d%{_enchantable}% &rを付与するときの自動命名設定を &6削除 &rしました。" to {_player}
+				exit
+			# これより，第1引数"set"の単独処理->処理終了
+			# 引数4: 自動設定される名前
+			if arg-4 isn't set:
+				message "%{@guild display name}% &4自動でつけられる名前が設定されていません。" to {_player}
+				exit
+			set {_brand} to arg-4
+			# 値（名前と光らせるかどうか）を保存
+			set {guild::brand::%{_pid}%::%{_enchantable}%::%{_enchanted}%::brand} to {_brand}
+			if arg-5 is "true" or "TRUE" or "1" or "on" or "ON":
+				set {guild::brand::%{_pid}%::%{_enchantable}%::%{_enchanted}%::glint} to true
+				set {_isGlint} to "&e光る"
+			else:
+				set {guild::brand::%{_pid}%::%{_enchantable}%::%{_enchanted}%::glint} to false
+				set {_isGlint} to "&7光らない"
+			message "%{@guild display name}% &e%{_enchanted}% &rに &d%{_enchantable}% &rを付与するときの設定を行いました。" to {_player}
+			message " &7● &r自動命名: &b%{_brand}%  &7● &r発光: %{_isGlint}%"
+			exit
+		# 第1引数"show"->すでに設定されているエンチャント時の自動命名一覧を表示
+		else if {_order} is "show":
+			message "%{@guild display name}% 現在，あなたが設定している自動命名は次の通りです。" to {_player}
+			set {_isntSet} to true
+			# エンチャントIDで回す
+			loop {uniqueEnchants::enchantable::*}:
+				# エンチャントされる道具IDで回す
+				loop {uniqueEnchants::enchanted::*}:
+					if {guild::brand::%{_pid}%::%loop-value-1%::%loop-value-2%::*} is set:
+						set {_brand} to {guild::brand::%{_pid}%::%loop-value-1%::%loop-value-2%::brand}
+						if {guild::brand::%{_pid}%::%loop-value-1%::%loop-value-2%::glint} is true:
+							set {_isGlint} to "&e(光る)"
+						else:
+							set {_isGlint} to "&7(光らない)"
+						set {_isntSet} to false
+						message "&7● &e%loop-value-1% &r+ &d%loop-value-2% &r-> &b%{_brand}% %{_isGlint}%" to {_player}
+			# 全く設定されてなかったときと，1つでも設定されているときで最後のメッセージを変更する
+			if {_isntSet} is true:
+				message "%{@guild display name}% &6現在，自動命名設定は記録されていません。" to {_player}
+			else:
+				message "%{@guild display name}% &a以上。" to {_player}
+			exit
 
 
 
+# 【イベント】/autobrand コマンドの自動補完
+on tab complete of "/autobrand":
+	set tab completions for position 1 to "set", "delete" and "show"
+	if tab arg-1 = "set" or "delete":
+		set tab completions for position 2 to {uniqueEnchants::enchantable::*}
+		set tab completions for position 3 to {uniqueEnchants::enchanted::*}
+		if tab arg-1 = "set":
+			set tab completions for position 5 to "true" and "false"
 
 
 
@@ -552,147 +672,6 @@ function setJobStatistics():
 
 
 
-# ◇■◇職業ごとの利権を設定（樵夫以外）◇■◇
-
-# 土工がショベルで対象ブロックを掘った場合
-on break of digdig:
-	# 条件チェック
-	the player's gamemode is survival
-	the player has permission "sakuraft.earthwork"
-	the player's tool is any shovel
-	{guild::jobRights::%the player's uuid%} >= {@per job rights earthwork}
-	{《v3からは使わないゾ》::%the player's uuid%} = true
-	# 本処理
-	#set {_x1} to (rounded down (x-loc of event-location / 16)) * 16
-	#set {_x2} to {_x1} + 15
-	#set {_y}  to rounded down (y-loc of event-location)
-	#set {_z1} to (rounded down (z-loc of event-location / 16)) * 16
-	#set {_z2} to {_z1} + 15
-	#message "(%{_x1}% - %{_x2}%), %{_y}%, (%{_z1}% - %{_z2}%)" to the player
-	#loop blocks within location({_x1},{_y},{_z1}) and location({_x2},{_y},{_z2}):
-	#	if past event-block's blockdata = loop-block's blockdata:
-	#		set {_up} to the block 1 meter above the loop-block
-	#		message {_up}'s blockdata
-	#		if "%{_up}'s blockdata%" = "minecraft:air":
-	# 旧処理
-	drop 3 of (the drops of event-block)							# 合わせて通常の4倍量ドロップ
-	addRights(player, -1 * {@per job rights earthwork})
-	#remove {@per job rights earthwork} from {guild::jobRights::%the player's uuid%}	# 利権を削る
-	#send action bar "&l利権残り&r &a%{guild::jobRights::%the player's uuid%}%&r / 1000" to player
-
-
-# 土工がつるはしで対象ブロックを掘った場合
-on break of digdigpick:
-	# 条件チェック
-	the player's gamemode is survival
-	the player has permission "sakuraft.earthwork"
-	the player's tool is any pickaxe
-	{guild::jobRights::%the player's uuid%} >= {@per job rights earthwork}
-	{《v3からは使わないゾ》::%the player's uuid%} = true
-	# 本処理
-	drop 3 of (the drops of event-block)							# 合わせて通常の4倍量ドロップ
-	addRights(player, -1 * {@per job rights earthwork})
-	#remove {@per job rights earthwork} from {guild::jobRights::%the player's uuid%}	# 利権を削る
-	#send action bar "&l利権残り&r &a%{guild::jobRights::%the player's uuid%}%&r / 1000" to player
-
-
-# 坑夫がショベルで対象ブロックを掘った場合（25/06/11関数化）
-on break of minemine:
-#	# 条件チェック
-#	the player's gamemode is survival
-#	the player has permission "sakuraft.miner"
-#	the player's tool is any pickaxe
-#	{guild::jobRights::%the player's uuid%} >= {@per job rights miner}
-#	{《v3からは使わないゾ》::%the player's uuid%} = true
-#	# 本処理
-#	drop 3 of (the drops of event-block)						# 合わせて通常の4倍量ドロップ
-#	addRights(player, -1 * {@per job rights miner})
-#	#remove {@per job rights miner} from {guild::jobRights::%the player's uuid%}	# 利権を削る
-#	#send action bar "&l利権残り&r &a%{guild::jobRights::%the player's uuid%}%&r / 1000" to player
-	breakWithRightsIfPossible(player, event-block, "miner", any pickaxe, 4, {@per job rights miner})
-
-# 【関数】条件を満たしている場合に利権採掘を実施
-# （引数）プレイヤー，壊そうとしているブロック，利権採掘に関わる職業ID，利権採掘で使用すべきツール，利権採掘成功時に採掘される量，利権採掘時に奪われる利権値
-function breakWithRightsIfPossible(player: player, block: block, jobId: text, rightTool: object, dropFold: number, removedRights: number):
-	set {_pid} to {_player}'s uuid
-	# 条件チェック
-	{_player}'s gamemode is survival
-	{_player} has permission "sakuraft.%{jobId}%"
-	{_player}'s tool is {_rightTool}
-	{guild::jobRights::%{_pid}%} >= {_removedRights}
-	{《v3からは使わないゾ》::%{_pid}%} = true
-	# 本処理
-	drop ({_dropFold} - 1) of (the drops of {_block} using {_player}'s tool) at {_block}
-	addRights({_player}, -1 * {_removedRights})
-
-
-# 左官がショベルで対象ブロックを掘った場合
-on break of plastplast:
-	# 条件チェック
-	the player's gamemode is survival
-	the player has permission "sakuraft.plasterwork"
-	the player's tool is any pickaxe
-	{guild::jobRights::%the player's uuid%} >= {@per job rights plasterwork}
-	{《v3からは使わないゾ》::%the player's uuid%} = true
-	# 本処理
-	drop 2 of (the drops of event-block)						# 合わせて通常の3倍量ドロップ
-	addRights(player, -1 * {@per job rights plasterwork})
-	#remove {@per job rights plasterwork} from {guild::jobRights::%the player's uuid%}	# 利権を削る
-	#send action bar "&l利権残り&r &a%{guild::jobRights::%the player's uuid%}%&r / 1000" to player
-
-
-
-
-
-
-
-
-
-
-################################################################################
-# (v3)仕事道具の生産
-################################################################################
-
-# 【関数】当サーバーでオリジナルの道具（のオブジェクト）を返します
-# （補足）アイテムの名前など見た目部分の定義もここで実施。
-# （引数）そのアイテムに割り当てられたID
-# （返値）オリジナル道具のオブジェクト
-function getSakuraftItem(itemId: text):: item:
-	# 鉄のチェーンソー
-	if {_itemId} = "iron_chainsaw":
-		set {_item} to an iron axe																	# 基本となるアイテムを指定
-		set the name of {_item} to "&6★ &a鉄のチェーンソー"
-		set repair cost component of {_item} to 100									# (SkBee) 修理コストを爆上げしている
-		delete repairable tag of {_item}														# (SkBee) 修理不能タグを付与している(機能してるかは不明)
-		#force {_item} to glint																			# アイテムを強制的に光らせる
-		set item model of {_item} to "minecraft:iron_axe"						# 見た目を決める起点となるファイルを指定
-		set custom model data of {_item} to 1												# CMD数値
-		set the line 1 of {_item}'s lore to "樵夫ギルド専用道具。"
-		set the line 2 of {_item}'s lore to "原木を根こそぎ切り落とすことができる。"
-		return {_item}
-
-
-
-# 【イベント】工匠が砥石をShift+右クリックすると，特殊な生産画面を出す
-on rightclick on grindstone:
-	set {_player} to the player
-	set {_pid} to the player's uuid
-	# 条件チェック
-	{guild::job::%{_pid}%} is "craftsman"
-	{_player} is sneaking
-	# 本処理
-	cancel the event
-	showTrade("manufactureWeaponForCraftsman", {_player})
-
-
-
-
-
-
-
-
-
-
 ################################################################################
 # 特殊な交易
 ################################################################################
@@ -730,15 +709,6 @@ function showTrade(type: text, player: player):
 				add getMerchantRecipe(loop-value-1, "%{_rate}% %loop-value-2%" parsed as item) to merchant recipes of {_merchant}
 		open merchant {_merchant} to {_player}
 		set {guild::openedMerchantType::%{_player}'s uuid%} to "dirtToDirt"
-	# ③工匠による仕事道具（武器系統）の生産
-	else if {_type} is "manufactureWeaponForCraftsman":
-		set {_merchant} to new merchant named "仕事道具（武器系統）の生産"
-		# 次のアイテムを作成可能
-		# 鉄の斧+9*レッドストーンダスト=鉄のチェーンソー
-		set {_item} to getSakuraftItem("iron_chainsaw")
-		add getMerchantRecipe({_item}, iron axe, 9 of redstone) to merchant recipes of {_merchant}
-		open merchant {_merchant} to {_player}
-		set {guild::openedMerchantType::%{_player}'s uuid%} to "manufactureWeaponForCraftsman"
 	# IDがどれにも引っかからなかったとき
 	else:
 		message "%{@guild display name}% &4交易の種類を指定する引数が不正です。" to {_player}
@@ -768,8 +738,8 @@ on player purchase:
 	if {_type} is "powderToConcrete":
 		set {_required} to {@per rights on marchant powder to concrete}
 	# ③工匠による仕事道具（武器系統）の生産
-	if {_type} is "manufactureWeaponForCraftsman":
-		set {_required} to {@per rights on manufacture weapon}
+	#if {_type} is "manufactureWeaponForCraftsman":
+	#	set {_required} to {@per rights on manufacture weapon}
 	# ⑳その他
 	else:
 		set {_required} to 0
@@ -800,19 +770,24 @@ on inventory close:
 # (v3)特殊な効果の発動
 ################################################################################
 
-# 【イベント】樵夫が各種のチェーンソーで原木を切った場合にCutAllを発動する
+#-------------------------------------------------------------------------------
+# カットオール（及び関連する関数群）
+#-------------------------------------------------------------------------------
+
+# 【イベント】樵夫が「カットオール」エンチャントのついた斧で原木を切った場合にCutAllを発動する
+# ・樵夫専用エンチャント，&4
 # （引数）表示させたい交易画面の種類，交易画面を表示するプレイヤー
 # （注意）
 # 　・v2までにあった「Shiftを押している」「利権発動ON」の条件はなくなった
-# 　・専用のアイテム（各種のチェーンソー）で切断する必要がある
+# 　・専用のエンチャントがついている必要がある
 on break of cutcut:
 	set {_player} to the player
 	set {_pid} to {_player}'s uuid
 	# 条件チェック
-	{_player}'s gamemode is survival															# サバイバルモードであること
-	{guild::job::%{_pid}%} is "lumberjack"												# プレイヤーが樵夫であること
-	isSakuraftItem({_player}'s tool, "チェーンソー") is true			# 道具が各種のチェーンソーであること
-	{guild::jobRights::%{_pid}%} >= {@per job rights lumberjack}	# 利権値が足りていること
+	{_player}'s gamemode is survival																			# サバイバルモードであること
+	{guild::job::%{_pid}%} is "lumberjack"																# プレイヤーが樵夫であること
+	{guild::jobRights::%{_pid}%} >= {@per job rights lumberjack cutall}		# 利権値が足りていること
+	{_player}'s tool is enchanted with guild_enchants:cut_all
 	# 本処理
 	damage player's tool by 1			# 手持ちの道具にダメージを1与える
 	set {_nokori} to (maximum durability of {_player}'s tool) - ({_player}'s tool's damage)
@@ -820,10 +795,9 @@ on break of cutcut:
 	if {_nokori} < 1:
 		remove player's tool from player	# 斧を破壊
 	# 利権を削る
-	addRights(player, -1 * {@per job rights lumberjack})
-	#remove {@per job rights lumberjack} from {guild::jobRights::%the player's uuid%}	# 利権を削る
-	#send action bar "&l利権残り&r &a%{guild::jobRights::%the player's uuid%}%&r / 1000" to player
+	addRights(player, -1 * {@per job rights lumberjack cutall})
 	cutByLumberjack(event-location, {_player})
+
 
 
 # 【関数】CutAll
@@ -837,12 +811,386 @@ function cutByLumberjack(loc: location, player: player):
 			cutLeave(loop-block)
 
 
+
 # 【関数】CutLeave
 function cutLeave(loc: location):
 	loop blocks in radius 4 around {_loc}:
 		if loop-block is leaves:
 			wait 1 tick
 			set block at loop-block to air
+
+
+
+
+
+#-------------------------------------------------------------------------------
+# 広域採掘
+#-------------------------------------------------------------------------------
+
+# 2025/06/09 SAKURAさんと話して次のように改良することとする。
+# ◇3x3x1掘削のエンチャント本ではなく，すでに3x3x1のエンチャントがついた状態のアイテムをアドミンショップで販売する形式とする。
+# ◎エンチャントは，現状のように「1000マス限定」ではなく，永続的なものに変更する。
+# ◎3x3x1掘削では，ツルハシで掘るのに適切なブロックのみが壊されるようにし，たとえば土など，ツルハシで掘るのに適さないようなブロックはそもそも壊されないように改良。
+# 修繕エンチャントは（事実上）つかないようにする。
+# 掘削する場合には，一定の利権値が減少していく（1ブロックあたりで減らす）。ただし坑夫のみ利権値減少なし。
+# 坑夫は，4倍量採掘能力と併用することが可能。
+# 耐久値は，1ブロックで1減るのではなく，1掘削で1減るものとする。
+
+
+
+# 下の「3x3掘削」を実現するために，ブロックを殴り始めた瞬間に，その殴った面（上下東西南北）を記録
+on leftclick:
+	# 条件チェックなし
+	# 本処理
+	set {_pid} to the player's uuid
+	set {guild::latestPunchedDirection::%{_pid}%} to the event-direction
+
+
+
+# 【イベント】「広域採掘」エンチャントのついたつるはしで石類を破砕した場合に広域採掘を発動する
+# ・坑夫優遇エンチャント，&6
+# （注意）
+# 　・v2までにあった「利権発動ON」の条件はなくなった
+# 　・専用のエンチャントがついている必要がある
+on break:
+	set {_player} to the player
+	set {_pid} to {_player}'s uuid
+	# 条件チェック
+	{_player}'s gamemode is survival													# サバイバルモードであること
+	{_player}'s tool is enchanted with guild_enchants:wide_mining
+	# 本処理
+	# 掘削したブロックを基準に，(2*エンチャントレベル+1) * (2*エンチャントレベル+1) * 1 のブロックを配列として取得
+	# 側（東西南北）面を採掘した場合，高さ（Y）の基準点は下から2マスになる。
+	set {_x} to the event-block's x-loc
+	set {_y} to the event-block's y-loc
+	set {_z} to the event-block's z-loc
+	set {_lvl} to enchantment level of guild_enchants:wide_mining of {_player}'s tool		# エンチャントのレベルを取得
+	if {guild::latestPunchedDirection::%{_pid}%} is above or below:
+		set {_breaking::*} to the blocks within location({_x}-{_lvl}, {_y}, {_z}-{_lvl}, event-world) and location({_x}+{_lvl}, {_y}, {_z}+{_lvl}, event-world)
+	else if {guild::latestPunchedDirection::%{_pid}%} is east or west:
+		set {_breaking::*} to the blocks within location({_x}, {_y}-1, {_z}-{_lvl}, event-world) and location({_x}, {_y}+{_lvl}*2-1, {_z}+{_lvl}, event-world)
+	else if {guild::latestPunchedDirection::%{_pid}%} is south or north:
+		set {_breaking::*} to the blocks within location({_x}-{_lvl}, {_y}-1, {_z}, event-world) and location({_x}+{_lvl}, {_y}+{_lvl}*2-1, {_z}, event-world)
+	delete {guild::latestPunchedDirection::%{_pid}%}
+	# 配列のそれぞれのブロックについて，いろいろと判定
+	loop {_breaking::*}:
+		# ブロックが空気なら，そのブロックの処理は終わって，ほかのブロックの判定に移る
+		if the loop-value is air:
+			continue the loop
+		# ブロックが「wide_mining_breakable」タグで指定されているブロックであれば，手持ちツールで破壊し，耐久度も1減らす
+		# （この処理により「シルクタッチ」など他エンチャントも配列中のブロックすべてに対して適用される。ただし「修繕」エンチャントのみ機能しない）
+		if the loop-value is tagged as tag "wide_mining_breakable":
+			# 坑夫以外の職業では，利権値を消費する。不足時は処理中止。
+			if {guild::job::%{_pid}%} isn't "miner":
+				if {guild::jobRights::%{_pid}%} < {@per job rights wide mining} * {_lvl}:
+					message "%{@guild display name}% &4利権値が底を尽きました。" to {_player}
+					stop
+				else:
+					addRights(player, -1 * {@per job rights wide mining} * {_lvl})
+			# ブロックを壊す実処理
+			break loop-value with effects using player's tool
+			remove 1 from the durability of the player's tool
+	# もし耐久値が0以下ならばツールをぶち壊す
+	if the durability of the player's tool <= 0:
+		delete the player's tool
+		play sound "entity.item.break" with volume 0.8 for the player
+
+
+
+
+
+#-------------------------------------------------------------------------------
+# 倍数ドロップ
+#-------------------------------------------------------------------------------
+
+# 【イベント】坑夫が「倍数ドロップ」エンチャントのついた道具で対象のブロックを破砕した場合にドロップ数を4倍とする
+# ・坑夫専用エンチャント，&4
+# （注意）
+# 　・v2までにあった「利権発動ON」の条件はなくなった
+# 　・専用のエンチャントがついている必要がある
+on block drop:
+	set {_player} to the player
+	set {_pid} to {_player}'s uuid
+	# 条件チェック（共通項）
+	{_player}'s gamemode is survival																	# サバイバルモードであること
+	{guild::job::%{_pid}%} is "miner"																	# プレイヤーが坑夫であること
+	{_player}'s tool is enchanted with guild_enchants:special_drop		# プレイヤーが「倍数ドロップ」エンチャントのついた道具で採掘したこと
+	the past event-block is tagged as tag "miner_mining_specials"			# 採掘したブロックが倍数ドロップの対象であること
+	{guild::jobRights::%{_pid}%} >= {@per job rights miner mining}		# 利権値が足りていること
+	# 本処理
+	cancel the event																					# 通常のブロック破壊処理をキャンセルした上で...
+	drop 4 of (event-items)																		# 規定の4倍量のアイテムをドロップし...
+	set the event-block to air																# そのブロックを消す（空気に置き換える）
+	addRights(player, -1 * {@per job rights miner mining})		# 利権値を消費
+
+
+
+# 【イベント】左官が「倍数ドロップ」エンチャントのついた道具で対象のブロックを破砕した場合にドロップ数を3倍とする
+# ・坑夫専用エンチャント，&4
+# （注意）
+# 　・v2までにあった「利権発動ON」の条件はなくなった
+# 　・専用のエンチャントがついている必要がある
+on block drop:
+	set {_player} to the player
+	set {_pid} to {_player}'s uuid
+	# 条件チェック（共通項）
+	{_player}'s gamemode is survival																				# サバイバルモードであること
+	{guild::job::%{_pid}%} is "plasterwork"																	# プレイヤーが左官であること
+	{_player}'s tool is enchanted with guild_enchants:special_drop					# プレイヤーが「倍数ドロップ」エンチャントのついた道具で採掘したこと
+	the past event-block is tagged as tag "plasterwork_mining_specials"			# 採掘したブロックが倍数ドロップの対象であること
+	{guild::jobRights::%{_pid}%} >= {@per job rights plasterwork mining}		# 利権値が足りていること
+	# 本処理
+	cancel the event																								# 通常のブロック破壊処理をキャンセルした上で...
+	drop 3 of (event-items)																					# 規定の3倍量のアイテムをドロップし...
+	set the event-block to air																			# そのブロックを消す（空気に置き換える）
+	addRights(player, -1 * {@per job rights plasterwork mining})		# 利権値を消費
+
+
+
+
+
+#-------------------------------------------------------------------------------
+# ガンスラッシュ
+#-------------------------------------------------------------------------------
+
+# 【イベント】「ガンスラッシュ」エンチャントのついた道具でShift+左クリックをすると矢を高速射出する
+# ・公共エンチャント，&a
+# （注意）
+# 　・専用のエンチャントがついている必要がある
+on leftclick:
+	set {_player} to the player
+	set {_pid} to {_player}'s uuid
+	# 条件チェック
+	{_player}'s gamemode is survival															# サバイバルモードであること
+	{_player} is sneaking																					# プレイヤーがShiftキーを押していること
+	{_player}'s tool is enchanted with guild_enchants:gunslash		# プレイヤーが「ガンスラッシュ」エンチャントのついた道具で採掘したこと
+	{_player} has 2 arrows																				# プレイヤーが2本以上の矢を持っていること
+	{guild::jobRights::%{_pid}%} >= 20														# 利権値が足りていること {@per job rights shoot}
+	# 本処理
+	cancel the event								# 通常の処理（例：樹皮を剥がす）をキャンセルした上で...
+	shoot an arrow at speed 10			# すごくすごい速度で1本の矢を射出（比較的まっすぐ飛んで行く）し...
+	remove 2 arrows from {_player}	# プレイヤーから矢を2本奪い...
+	addRights(player, -1 * 20)			# 利権値を消費
+
+
+
+
+
+#-------------------------------------------------------------------------------
+# 広域耕作
+#-------------------------------------------------------------------------------
+
+on rightclick:
+	set {_player} to the player
+	set {_pid} to {_player}'s uuid
+	# 条件チェック
+	the event-block is dirt or grass block or farmland										# 右クリックしたのが土or草ブロックor耕地であること
+	{_player}'s tool is enchanted with guild_enchants:wide_cultivate			# プレイヤーが「広域耕作」エンチャントのついた道具で採掘したこと
+	{guild::jobRights::%{_pid}%} >= 3																			# 利権値が足りていること {@per job rights cultivate}
+	# 「道具が各種のクワである」という条件は，当該エンチャントが（サバイバルでは）クワにしか付与されないことで担保しているので不要
+	cancel the event
+	wait 1 tick		# 休憩を挟まないと以下のコードがうまく作動しない
+	# 本処理
+	# 掘削したブロックを基準に，X(2*エンチャントレベル+1) * Y1 * Z(2*エンチャントレベル+1) のブロックを配列として取得
+	set {_x} to the event-block's x-loc
+	set {_y} to the event-block's y-loc
+	set {_z} to the event-block's z-loc
+	set {_lvl} to enchantment level of guild_enchants:wide_cultivate of {_player}'s tool		# エンチャントのレベルを取得
+	set {_plowing::*} to the blocks within location({_x}-{_lvl}, {_y}, {_z}-{_lvl}, event-world) and location({_x}+{_lvl}, {_y}, {_z}+{_lvl}, event-world)
+	# 配列中のうち，条件に合うブロックについては耕地に変える
+	loop {_plowing::*}:
+		# 条件チェック
+		the loop-value is dirt or grass block		# そのブロックが土か草ブロックであること
+		the block above the loop-value is air		# そのひとつ上のブロックが空気であること
+		# 本処理
+		update the loop-value as farmland										# 耕地にする
+		remove 1 from the durability of {_player}'s tool		# 道具（クワ）の耐久力を1減らす
+		# 利権値の消費処理
+		if {guild::jobRights::%{_pid}%} < 3 * {_lvl}:
+			message "%{@guild display name}% &4利権値が底を尽きました。" to {_player}
+			stop
+		else:
+			addRights({_player}, -1 * 3 * {_lvl})
+	wait 1 tick		# 休憩をはさまないと以下のコードがうまく作動しない
+	# 同じ配列中で，条件に合う耕地には苗を植える
+	# (処理が野暮ったいが，より確実に動きそうなので，これで良い)
+	loop {_plowing::*}:
+		# 条件チェック
+		the loop-value is farmland																			# そのブロックが耕地であること
+		the block above the loop-value is air														# そのひとつ上のブロックが空気であること
+		set {_seed} to the type of the off hand item of {_player}				# (ここではオフハンドアイテムのIDを取得している)
+		{_seed} is wheat_seeds or carrot or potato or beetroot_seeds		# オフハンドアイテムが，小麦かビートルートの種，ニンジン，ジャガイモであること
+		# 本処理
+		# 以下8行では，持っているオフハンドアイテムのIDからブロックIDを取得している
+		if off hand item of {_player} is wheat_seeds:
+			set {_seeding} to wheat
+		else if off hand item of {_player} is carrot:
+			set {_seeding} to carrots
+		else if off hand item of {_player} is potato:
+			set {_seeding} to potatoes
+		else if off hand item of {_player} is beetroot_seeds:
+			set {_seeding} to beetroots
+		set the block above the loop-value to {_seeding}	# この行で苗を植えている
+		remove {_seed} from {_player}											# プレイヤーのインベントリから苗を1つ奪う
+	# もし耐久値が0以下ならばツールをぶち壊す
+	if the durability of {_player}'s tool <= 0:
+		delete {_player}'s tool
+		play sound "entity.item.break" with volume 0.8 for {_player}
+
+
+
+
+
+#-------------------------------------------------------------------------------
+# 広域収獲
+#-------------------------------------------------------------------------------
+
+on break:
+	set {_player} to the player
+	set {_pid} to {_player}'s uuid
+	# 条件チェック
+	the past event-block is wheat or carrots or potatoes or beetroots			# 破壊したものが，小麦，ビートルート，ニンジン，ジャガイモである
+	{_player}'s tool is enchanted with guild_enchants:wide_harvest				# プレイヤーが「広域耕作」エンチャントのついた道具で採掘したこと
+	{guild::jobRights::%{_pid}%} >= 1																			# 利権値が足りていること {@per job rights cultivate}
+	cancel the event
+	wait 1 tick		# 休憩を挟まないと以下のコードがうまく作動しない
+	# 本処理
+	# 壊したブロックを基準に，X(2*エンチャントレベル+1) * Y1 * Z(2*エンチャントレベル+1) のブロックを配列として取得
+	set {_x} to the event-block's x-loc
+	set {_y} to the event-block's y-loc
+	set {_z} to the event-block's z-loc
+	set {_lvl} to enchantment level of guild_enchants:wide_harvest of {_player}'s tool		# エンチャントのレベルを取得
+	set {_blocks::*} to the blocks within location({_x}-{_lvl}, {_y}, {_z}-{_lvl}, event-world) and location({_x}+{_lvl}, {_y}, {_z}+{_lvl}, event-world)
+	# 配列中のうち，条件に合うブロックについては破壊処理
+	set {_harvestedQuantity} to 0			# 収獲ブロック数をカウント
+	loop {_blocks::*}:
+		if the loop-value is wheat or carrots or potatoes:
+			if the age of the loop-value is 7:
+				break the loop-value
+				addRights({_player}, 9)
+				add 1 to {_harvestedQuantity}
+		else if the loop-value is beetroots:
+			the age of the loop-value is 3:
+				break the loop-value
+				addRights({_player}, 6)
+				add 1 to {_harvestedQuantity}
+	# もし耐久値が0以下ならばツールをぶち壊す
+	if the durability of {_player}'s tool <= 0:
+		delete {_player}'s tool
+		play sound "entity.item.break" with volume 0.8 for {_player}
+
+
+
+
+
+
+
+
+
+################################################################################
+# (v3)独自エンチャント時自動命名
+################################################################################
+
+# 【イベント】独自エンチャントを付与するとき，道具の名前に応じて道具の見た目を変更する
+# (覚え書き)
+# ・3つあるスロットは，左から，slot 0，slot 1，slot 2
+# ・slot 0と1にアイテムを置いてから，slot 2に成果物が反映されるまで，1tick必要。
+# 　このため，slot 2のアイテムを参照・変更する場合には，必ず1 tickを置くこと。
+on anvil prepare:
+	set {_player} to the player
+	set {_pid} to {_player}'s uuid
+	wait a tick		# 休憩をはさまないと以下のコードがうまく作動しない
+	# エンチャント先のアイテムがすでに命名されている＝テキストボックスに文字列がある状態ならば，その文字列を予め取得しておく
+	set {_item2} to the slot 2 of the event-inventory
+	set {_name2} to the name of {_item2}
+	# スロット2（完成予定品）のエンチャント一覧から，スロット0（元の製品）にすでにあるエンチャントを取り除いて，今回得る予定のエンチャントのみを抽出する
+	set {_enchanting::*} to the slot 2 of the event-inventory's enchantments
+	loop the slot 0 of the event-inventory's enchantments:
+		remove loop-value from {_enchanting::*}
+	# 今回つけられるエンチャントが独自IDならば，そのIDを取得。なければ今回の処理を終わる。
+	set {_stringedEnchanting} to "%{_enchanting::*}%"		# 文字列を検索しやすいようにリスト変数をテキスト化
+	loop {uniqueEnchants::enchantable::*}:
+		if {_stringedEnchanting} contains loop-value:
+			set {_enchantable} to loop-value
+	if {_enchantable} isn't set:
+		exit
+	#message {_stringedEnchanting} to {_player}
+	# スロット0の道具素材（日本語名）と道具種類（ID）を取得するset {uniqueEnchants::enchanted::*} to "axe", "boots", "chestplate", "helmet", "hoe", "leggings", "pickaxe", "shovel", "sword" and "shears"
+	set {_stringedSlotZeroItem} to "%the slot 0 of the event-inventory%"				# データを文字列として検索しやすいようにアイテム名をテキスト化
+	loop {uniqueEnchants::enchanted::*}:
+		if {_stringedSlotZeroItem} contains loop-value:
+			set {_enchanted} to loop-value
+	if {_enchanted} isn't set:
+		exit
+	if {_stringedSlotZeroItem} contains "diamond":
+		set {_toolmaterialJp} to "ダイヤモンド"
+	else if {_stringedSlotZeroItem} contains "gold":
+		set {_toolmaterialJp} to "金"
+	else if {_stringedSlotZeroItem} contains "iron":
+		set {_toolmaterialJp} to "鉄"
+	else if {_stringedSlotZeroItem} contains "netherite":
+		set {_toolmaterialJp} to "ネザライト"
+	else if {_stringedSlotZeroItem} contains "stone":
+		set {_toolmaterialJp} to "石"
+	else if {_stringedSlotZeroItem} contains "wood":
+		set {_toolmaterialJp} to "木"
+	else if {_stringedSlotZeroItem} contains "copper":
+		set {_toolmaterialJp} to "銅"
+	#message "%{_enchantable}% %{_enchanted}%" to {_player}
+	# スロット2（完成予定品）の道具に強制命名プラスCMDにも同じ名前を付与
+	# エンチャント先のアイテムがすでに命名されている＝テキストボックスに文字列がある状態ならば，その名前を付与してやる
+	if {_name2} is set:
+		set {_brand} to {_name2}		# 命名設定を取得
+		set {_glint} to false				# 非発光で固定
+	# プレイヤーが独自命名を設定していれば，その名前を付与
+	else if {guild::brand::%{_pid}%::%{_enchantable}%::%{_enchanted}%::*} is set:
+		set {_brand} to {guild::brand::%{_pid}%::%{_enchantable}%::%{_enchanted}%::brand}		# 命名設定を取得
+		set {_glint} to {guild::brand::%{_pid}%::%{_enchantable}%::%{_enchanted}%::glint}		# 発光／非発光を取得
+	# 独自設定がなければデフォルト名を付与
+	else:
+		set {_brand} to {defaultBrand::%{_enchantable}%::%{_enchanted}%}								# 命名設定を取得
+		set {_glint} to false																														# 非発光で固定
+	replace "<material>" in {_brand} with {_toolmaterialJp}														# <material>部分を素材名に置換
+	#message {_brand} to {_player}
+	set {_product} to the slot 2 of the event-inventory																# 今のところ完成しているスロット2（完成予定品）の道具を取得
+	set the name of {_product} to {_brand}																						# アイテム名を設定する
+	if {_glint} is false:																															# 非発光を所望する場合には，発光フラグを降ろす
+		force {_product} to stop glint
+	else:
+		force {_product} to glint																												# 発光を所望する場合には，発光フラグをつける
+	set the custom model data strings of {_product} to {_brand}												# カスタムモデルデータにも同名を付与
+	set the slot 2 of the event-inventory to {_product}																# そうして完成したアイテムをスロットに戻してやる
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# (v3)収獲->利権値
+################################################################################
+
+# 【イベント】プレイヤー自身の手で，小麦，ビートルート，ニンジン，ジャガイモを収獲した場合，利権値を得られる
+# ・つまり自動化された農園では利権値を取得できない
+# ・広域収穫エンチャントで収穫を実施する場合にはこのイベントは発火しない（諸々の条件が違うし）
+# (覚え書き)
+# ・「on break」は，プレイヤーによる直接の行動のときにしか発火しない
+# ・小麦，ニンジン，ジャガイモの作物の成長段階は8（0から7），ビートルートの成長段階は4（0から3）。
+# 　成長の抽選回数が少ない分，ビートルとはわずかに早く成長する。
+on break:
+	set {_player} to the player
+	set {_pid} to {_player}'s uuid
+	if the past event-block is wheat or carrots or potatoes:
+		if age of the past event-block is 7: # 小麦，ニンジン，ジャガイモの最大成長段階
+			addRights({_player}, 10)
+	else if the past event-block is beetroots:
+		if age of the past event-block is 3: # ビートルートの最大成長段階
+			addRights({_player}, 7)
+
 
 
 
@@ -928,39 +1276,22 @@ function addRightsOnBackground(p: offlineplayer, a: number):: number:
 
 
 
-
-
-
-
 # 【関数】職業IDから職業日本語名を返す
 function jobToJp(id: text):: text:
-	if {_id} is "lumberjack":
-		set {_result} to "樵夫"
-	else if {_id} is "craftsman":
-		set {_result} to "工匠"
-	else if {_id} is "earthwork":		# もはや必要ないが，念のため維持
-		set {_result} to "土工"
-	else if {_id} is "miner":
-		set {_result} to "坑夫"
-	else if {_id} is "plasterwork":
-		set {_result} to "左官"
-	else:
-		set {_result} to "無職"
-	return {_result}
-
-
-
-# 【関数】当サーバーでオリジナルの道具であるかどうかの正誤を返します
-# （詳細）オリジナルアイテムの名称には，必ず「黄色の★」「アイテム名はライム色」なので，そこで判定している
-# （引数）判定したいアイテム，接尾辞（アイテムの最後の文字列）
-# （返値）オリジナルアイテムであると判定した場合にはtrueを返す
-function isSakuraftItem(item: material, suffix: text):: boolean:
-	set {_name} to {_item}'s name
-	if {_name} doesn't start with "&6★ &a":
-		return false
-	if {_name} doesn't end with {_suffix}:
-		return false
-	return true
+	return {jobs::%{_id}%::name}
+	#if {_id} is "lumberjack":
+	#	set {_result} to "樵夫"
+	#else if {_id} is "craftsman":
+	#	set {_result} to "工匠"
+	#else if {_id} is "earthwork":		# もはや必要ないが，念のため維持
+	#	set {_result} to "土工"
+	#else if {_id} is "miner":
+	#	set {_result} to "坑夫"
+	#else if {_id} is "plasterwork":
+	#	set {_result} to "左官"
+	#else:
+	#	set {_result} to "無職"
+	#return {_result}
 
 
 
@@ -1065,150 +1396,4 @@ on join:
 
 
 
-
-################################################################################
-# 1.21.4実装
-################################################################################
-
-# 2025/06/09 SAKURAさんと話して次のように改良することとする。
-# ◇3x3x1掘削のエンチャント本ではなく，すでに3x3x1のエンチャントがついた状態のアイテムをアドミンショップで販売する形式とする。
-# ◎エンチャントは，現状のように「1000マス限定」ではなく，永続的なものに変更する。
-# ◎3x3x1掘削では，ツルハシで掘るのに適切なブロックのみが壊されるようにし，たとえば土など，ツルハシで掘るのに適さないようなブロックはそもそも壊されないように改良。
-# 修繕エンチャントは（事実上）つかないようにする。
-# 掘削する場合には，一定の利権値が減少していく（1ブロックあたりで減らす）。ただし坑夫のみ利権値減少なし。
-# 坑夫は，4倍量採掘能力と併用することが可能。
-# 耐久値は，1ブロックで1減るのではなく，1掘削で1減るものとする。
-
-# オリジナルのアイテムを与える
-command /getspecialitem <number>:
-	trigger:
-		# 条件チェック
-		set {_player} to the player
-		{_player} is an operator			# コマンドの実行者がOP権限者であること
-		# 本処理
-		wait a tick
-		if arg-1 = 0:
-		#	set {_book} to an enchanted_book with lore "&3広域破砕3x3:1000"
-		#	give {_book} to the player
-		else if arg-1 = 1:
-			set {_pickaxe} to an iron pickaxe with lore "&3★広域破砕3x3"
-			set repair cost component of {_pickaxe} to 100		# (SkBee) ツルハシの修理コストを爆上げしている
-			delete repairable tag of player's tool						# (SkBee) ツルハシの修理不能タグを付与している(機能してるかは不明)
-			force {_pickaxe} to glint													# アイテムを強制的に光らせる
-			set the name of {_pickaxe} to "&r岩融"
-			set item model of {_pickaxe} to "kasumin:iron_pickaxe"
-			set custom model data of {_pickaxe} to 1
-			set the line 2 of {_pickaxe}'s lore to "武蔵坊弁慶が振るっていた薙刀。「いわとおし」と読む。"
-			set the line 3 of {_pickaxe}'s lore to "坑夫特効ブロックを3x3の広範囲にわたって破砕する。"
-			give {_pickaxe} to the player
-		else if arg-1 = 2:
-			set {_item}  to getSakuraftItem("iron_chainsaw")
-			give {_item} to the player
-
-
-
-# オリジナルのエンチャントを金床でつけられるようにする
-#on anvil prepare:
-#	# 条件チェック
-#	the slot 0 of the event-inventory is any pickaxe
-#	the slot 1 of the event-inventory is an enchanted_book
-#	set {_lore} to the line 1 of the slot 1 of the event-inventory's lore
-#	{_lore} starts with "&3広域破砕3x3:"
-#	# 本処理
-#	wait a tick	# 休憩をはさまないと以下のコードがうまく作動しない
-#	set {_item} to the slot 0 of the event-inventory
-#	force {_item} to start glint
-#	set the slot 2 of the event-inventory to {_item} with lore {_lore}
-
-
-
-# 下の「3x3掘削」を実現するために，ブロックを殴り始めた瞬間に，その殴った面（上下東西南北）を記録
-on leftclick:
-	# 条件チェックなし
-	# 本処理
-	set {_pid} to the player's uuid
-	set {guild::latestPunchedDirection::%{_pid}%} to the event-direction
-
-
-
-# オリジナルエンチャントのついたツールで破砕する場合
-on break:
-	# 条件チェック
-	# ？破砕に使ったツールに，オリジナルのエンチャント「広域破砕」がついている
-	set {_lore} to the line 1 of the player's tool's lore
-	{_lore} starts with "&3★広域破砕3x3"
-	# 本処理
-	cancel the event
-	# エンチャントのチャージ数を数える
-	#set {_rest} to getRemainingAmountFromOriginalEnchantment({_lore},"&3広域破砕3x3")
-	# 掘削したブロックを中心に，3x3x1の9ブロックを配列として取得
-	set {_x} to the event-block's x-loc
-	set {_y} to the event-block's y-loc
-	set {_z} to the event-block's z-loc
-	set {_pid} to the player's uuid
-	if {guild::latestPunchedDirection::%{_pid}%} is above or below:
-		set {_breaking::*} to the blocks within location({_x}-1,{_y},{_z}-1, event-world) and location({_x}+1,{_y},{_z}+1, event-world)
-	else if {guild::latestPunchedDirection::%{_pid}%} is east or west:
-		set {_breaking::*} to the blocks within location({_x},{_y}-1,{_z}-1, event-world) and location({_x},{_y}+1,{_z}+1, event-world)
-	else if {guild::latestPunchedDirection::%{_pid}%} is south or north:
-		set {_breaking::*} to the blocks within location({_x}-1,{_y}-1,{_z}, event-world) and location({_x}+1,{_y}+1,{_z}, event-world)
-	delete {guild::latestPunchedDirection::%{_pid}%}
-	# 配列のそれぞれのブロックについて，
-	# 坑夫特効ブロック（minemine）ならば，壊す。利権も使用可能。坑夫以外は利権値が1減る
-	# ピッケルで掘る土工特効ブロック（digdigpick）ならば，ただ壊す。坑夫以外は利権値が1減る
-	loop {_breaking::*}:
-		if loop-value is minemine:
-			break loop-value using player's tool
-			breakWithRightsIfPossible(player, event-block, "miner", any pickaxe, 4, {@per job rights miner})
-			addRights({_player}, -1 * 1) if the player doesn't have permission "sakuraft.miner"
-		else if loop-value is digdigpick:
-			break loop-value using player's tool
-			addRights({_player}, -1 * 1) if the player doesn't have permission "sakuraft.miner"
-		#remove 1 from {_rest}
-	# ツールの耐久値は1のみ減らす。もし耐久値が0以下ならばツールをぶち壊す
-	remove 1 from the durability of the player's tool
-	if the durability of the player's tool <= 0:
-		delete the player's tool
-		play sound "entity.item.break" with volume 0.8 for the player
-	# オリジナルエンチャントに書いてあるチャージカウントを書き換える。
-	# 0以下の場合はエンチャント名（コメント）を消す。
-	#set the line 1 of the player's tool's lore to concat("&3広域破砕3x3:",{_rest})
-	#if {_rest} <= 0:
-	#	delete the line 1 of the player's tool's lore
-
-
-# オリジナルエンチャントからチャージ数を得る
-#function getRemainingAmountFromOriginalEnchantment(lore: text, ench: text):: number:
-#	set {_loreLength} to length of {_lore}
-#	set {_enchLength} to length of {_ench}
-#	set {_part} to substring of {_lore} from ({_enchLength} + 1) to ({_loreLength})
-#	return {_part} parsed as number
-
-
-
-# 【イベント】オリジナルの（＝Loreに★のついている）エンチャントがある場合は他エンチャントをつけられなくする
-# （補足）
-# 　・とくに「修繕」「耐久力」を封じたい
-# 　・公式のエンチャントを付与すると，想定外のバグが起きるかもしれないので。
-on enchant prepare:
-	# 条件チェック
-	# ツールに，オリジナルのエンチャントがついている
-	set {_item} to the enchanted item
-	set {_lore} to the line 1 of {_item}'s lore
-	{_lore} starts with "&3★"
-	cancel the event
-
-
-
-# 【イベント】オリジナルの（＝Loreに★のついている）エンチャントがある場合は金床使用不能
-# （補足）
-# 　・とくに「修繕」「耐久力」を封じたい
-# 　・公式のエンチャントを付与すると，想定外のバグが起きるかもしれないので。
-on skbee anvil prepare:
-	# 条件チェック
-	# ツールに，オリジナルのエンチャントがついている
-	set {_item} to the slot 0 of event-inventory
-	set {_lore} to the line 1 of {_item}'s lore
-	{_lore} starts with "&3★"
-	set event-slot to air
 
