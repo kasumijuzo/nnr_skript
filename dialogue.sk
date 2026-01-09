@@ -1,0 +1,516 @@
+
+
+
+
+# ◇■◇オプション◇■◇
+options:
+	# 当スクリプトの名称
+	dialog display name : "&7[&aDialog&7]&r"
+
+
+# 【コマンド】選択肢のついたメッセージを生成して返す
+# （引数）シナリオID（英数），ハッシュ（プレイヤーが同一地点でシナリオ再生していることを保障する暗号），ブックマーク（会話の途中経過を示す暗号）
+# 
+command /dialogue <scenarioId: string> [<bookmark: string>]:
+	#executable by: players and console
+	trigger:
+		# 事前処理
+		# [1] コマンドを実行した主体者を取得
+		# (1-1) コマンド送信者がコマンドブロックの場合...
+		#   1.コマンドブロックから最も近い位置にいるプレイヤーObj.を取得する
+		#   2.プレイヤーObj.をもとに，ハッシュ値を生成し，空となっている（はずの）第2引数に代入
+		if the command sender isn't a player:
+			set {_minDistance} to 5		# 右数値（メートル）以内のプレイヤーのみ認識する
+			loop all players:
+				set {_distance} to the distance between the block and the loop-player
+				if {_distance} < {_minDistance}:
+					set {_player} to the loop-player
+					set {_minDistance} to {_distance}
+			# 該当者がいなかった場合は，Mobがコマンド送出したものと判断して処理中断
+			if {_player} isn't set:
+				exit
+			# プレイヤーの場所と名前を元にハッシュ発行してもらう
+			set {_hash} to getShortHash({_player})
+			# シナリオ再生用のハッシュを全削除して，改めてシナリオID，ハッシュをグローバル変数に保持
+			delete {dialogue::cache::%{_pid}%::*}
+			setDialogueCache({_player}, "scenarioId", {_scenarioId})
+			setDialogueCache({_player}, "hash", {_hash})
+			setDialogueCache({_player}, "bookmark", "init")
+		# (1-2)コマンド送信者がプレイヤー自身の場合...
+		#   1.そのプレイヤーObj.を取得する
+		#   2.グローバル関数に保持しているハッシュ（コマンドの初回実行時に取得したハッシュ）と今回生成したハッシュが合一であることを調べる
+		#     - これは，一連のシナリオを，同じ場所で実行し続けているかを調べるためにある。
+		#     - ハッシュ不一致の場合は，警告を出して処理を中断。
+		else if command sender is a player:
+			set {_player} to the command sender
+			set {_hashGenerated} to getShortHash({_player})
+			set {_hash} to getDialogueCache({_player}, "hash")
+			if {_hashGenerated} != {_hash}:
+				scLog({_player}, "e", "一連のシナリオは，同一場所で再生し続けてください")
+				#message " %{_hashGenerated}% != %{_hash}%" to {_player}
+				stop
+		# 実処理
+		setDialogueCache({_player}, "bookmark", {_bookmark})		# 今回再生しているブックマークを記録
+		# - 台本（シナリオ）追加時には，ここから下に追加して！！！
+		# シナリオID（第1引数）にもとづいて，そのシナリオの関数に飛んでもらう
+		if {_scenarioId} = "helloWorkSwitchWork":
+			scHelloWorkSwitchWork({_player}, {_bookmark})
+		else if {_scenarioId} = "helloWorkDescWork":
+			scHelloWorkDescWork({_player}, {_bookmark})
+		else if {_scenarioId} = "helloWorkLumberjackBook":
+			scHelloWorkLumberjackBook({_player}, {_bookmark})
+		else if {_scenarioId} = "helloWorkMinerBook":
+			scHelloWorkMinerBook({_player}, {_bookmark})
+		else if {_scenarioId} = "helloWorkPlasterworkBook":
+			scHelloWorkPlasterworkBook({_player}, {_bookmark})
+		else if {_scenarioId} = "helloWorkAgriBook":
+			scHelloWorkAgriBook({_player}, {_bookmark})
+		else if {_scenarioId} = "helloWorkCivEngBook":
+			scHelloWorkCivEngBook({_player}, {_bookmark})
+		else if {_scenarioId} = "helloWorkBattleBook":
+			scHelloWorkBattleBook({_player}, {_bookmark})
+
+
+
+
+
+
+
+
+
+################################################################################
+# 台本群
+################################################################################
+
+#-------------------------------------------------------------------------------
+# 転職処理
+#-------------------------------------------------------------------------------
+function scHelloWorkSwitchWork(player: player, bookmark: string):
+	set {_pid} to {_player}'s uuid
+	set {_disp} to "&9HelloWork"
+	# ここから共通処理========
+	# もし，前回転職日の記録がなかった場合は，ゼロ（1970/1/1）を記録。
+	if {guild::lastJobChangeDay::%{_pid}%} is not set:
+		set {guild::lastJobChangeDay::%{_pid}%} to 0
+	# 最終ジョブチェンジ日と本日との日数差を求める
+	set {_today} to floor(unix timestamp of now / 86400)	# この行では，本日を求めている
+	set {_diff} to {_today} - {guild::lastJobChangeDay::%{_pid}%}
+	# 共通処理終わり========
+	# 最初のメッセージ
+	if {_bookmark} isn't set:
+		scMessage({_player}, {_disp}, "%nl% ようこそ，職業安定所へ。%nl% ここでは，就職・転職の手続きを承っております。")
+		set {_jobJp} to jobToJp({guild::job::%{_pid}%})
+		scLog({_player}, "i", "現在のあなたの職業は %{_jobJp}% です")
+		set {_c1} to "樵夫に転職したい||mayLumberjack||木材生産に有利な樵夫（木こり）への転職手続きを取ります。"
+		set {_c2} to "坑夫に転職したい||mayMiner||土木アイテムの生産に有利な坑夫への転職手続きを取ります。"
+		set {_c3} to "左官に転職したい||mayPlasterwork||高級建材の生産に有利な左官への転職手続きを取ります。"
+		set {_c4} to "退職したい||mayUnemployed||退職手続きを取ります。"
+		scChoices({_player}, {_c1}, {_c2}, {_c3}, {_c4})
+		exit
+	# 最初のメッセージ以外（共通処理）
+	# 最終転職日から30日経っていない場合，警告を出して終了
+	if {_diff} < 30:
+		scMessage({_player}, {_disp}, "%nl% あなたは最近転職したばかりでしょう。%nl% しばらく今の職業でがんばってみては？")
+		scLog({_player}, "e", "前回の転職から %{_diff}% 日しか経過しておらず，現在は転職できません")
+		exit
+	# 転職しようかな（樵夫）
+	if {_bookmark} = "mayLumberjack":
+		if {guild::job::%{_pid}%} = "lumberjack":
+			scMessage({_player}, {_disp}, "%nl% あなたはすでに樵夫でしょう？%nl% 私を冷やかしに来たのですか？")
+			scLog({_player}, "e", "現在と同じ職業への転職はできません")
+			exit
+		scMessage({_player}, {_disp}, "%nl% 樵夫への転職後は 30日間 転職ができませんよ。%nl% それでも転職を希望しますか？")
+		set {_c1} to "決定||acceptLumberjack||本当に樵夫に転職する"
+		set {_c2} to "キャンセル||cancel||転職を思いとどまる"
+		scChoices({_player}, {_c1}, {_c2})
+		exit
+	# 転職処理（樵夫）
+	else if {_bookmark} = "acceptLumberjack":
+		set {_beforeJobJp} to jobToJp({guild::job::%{_pid}%})
+		set {_afterJobJp} to jobToJp(setJob({_player}, "lumberjack"))
+		set {guild::lastJobChangeDay::%{_pid}%} to {_today}		# 転職日の更新
+		scMessage({_player}, {_disp}, "%nl% %{_afterJobJp}%への転職を受け付けました。%nl% これからも新しい職業でがんばってくださいね。")
+		scLog({_player}, "s", "転職処理成功: %{_beforeJobJp}% -> %{_afterJobJp}%")
+		scLog({_player}, "w", "本日より 30日間 転職・退職ができません")
+		exit
+	# 転職しようかな（坑夫）
+	if {_bookmark} = "mayMiner":
+		if {guild::job::%{_pid}%} = "miner":
+			scMessage({_player}, {_disp}, "%nl% あなたはすでに坑夫でしょう？%nl% 私を冷やかしに来たのですか？")
+			scLog({_player}, "e", "現在と同じ職業への転職はできません")
+			exit
+		scMessage({_player}, {_disp}, "%nl% 坑夫への転職後は 30日間 転職ができませんよ。%nl% それでも転職を希望しますか？")
+		set {_c1} to "決定||acceptMiner||本当に坑夫に転職する"
+		set {_c2} to "キャンセル||cancel||転職を思いとどまる"
+		scChoices({_player}, {_c1}, {_c2})
+		exit
+	# 転職処理（坑夫）
+	else if {_bookmark} = "acceptMiner":
+		set {_beforeJobJp} to jobToJp({guild::job::%{_pid}%})
+		set {_afterJobJp} to jobToJp(setJob({_player}, "miner"))
+		set {guild::lastJobChangeDay::%{_pid}%} to {_today}		# 転職日の更新
+		scMessage({_player}, {_disp}, "%nl% %{_afterJobJp}%への転職を受け付けました。%nl% これからも新しい職業でがんばってくださいね。")
+		scLog({_player}, "s", "転職処理成功: %{_beforeJobJp}% -> %{_afterJobJp}%")
+		scLog({_player}, "w", "本日より 30日間 転職・退職ができません")
+		exit
+	# 転職しようかな（左官）
+	if {_bookmark} = "mayPlasterwork":
+		if {guild::job::%{_pid}%} = "plasterwork":
+			scMessage({_player}, {_disp}, "%nl% あなたはすでに左官でしょう？%nl% 私を冷やかしに来たのですか？")
+			scLog({_player}, "e", "現在と同じ職業への転職はできません")
+			exit
+		scMessage({_player}, {_disp}, "%nl% 左官への転職後は 30日間 転職ができませんよ。%nl% それでも転職を希望しますか？")
+		set {_c1} to "決定||acceptPlasterwork||本当に左官に転職する"
+		set {_c2} to "キャンセル||cancel||転職を思いとどまる"
+		scChoices({_player}, {_c1}, {_c2})
+		exit
+	# 転職処理（左官）
+	else if {_bookmark} = "acceptPlasterwork":
+		set {_beforeJobJp} to jobToJp({guild::job::%{_pid}%})
+		set {_afterJobJp} to jobToJp(setJob({_player}, "plasterwork"))
+		set {guild::lastJobChangeDay::%{_pid}%} to {_today}		# 転職日の更新
+		scMessage({_player}, {_disp}, "%nl% %{_afterJobJp}%への転職を受け付けました。%nl% これからも新しい職業でがんばってくださいね。")
+		scLog({_player}, "s", "転職処理成功: %{_beforeJobJp}% -> %{_afterJobJp}%")
+		scLog({_player}, "w", "本日より 30日間 転職・退職ができません")
+		exit
+	# 退職しようかな
+	if {_bookmark} = "mayUnemployed":
+		if {guild::job::%{_pid}%} = "unemployed":
+			scMessage({_player}, {_disp}, "%nl% あなたはすでに無職の身でしょう？%nl% バカやってないで早く就職しなさいよ。")
+			scLog({_player}, "e", "現在と同じ職業への転職はできません")
+			exit
+		scMessage({_player}, {_disp}, "無職になっても，メリットは全くありません。%nl% それでも転職を希望しますか？")
+		set {_c1} to "決定||acceptUnemployed||マジで仕事を辞める"
+		set {_c2} to "キャンセル||cancel||退職を思いとどまる"
+		scChoices({_player}, {_c1}, {_c2})
+		exit
+	# 退職処理 ほかの転職時にある転職日更新処理は行わない。
+	else if {_bookmark} = "acceptUnemployed":
+		set {_beforeJobJp} to jobToJp({guild::job::%{_pid}%})
+		set {_afterJobJp} to jobToJp(setJob({_player}, "unemployed"))
+		scMessage({_player}, {_disp}, "%nl% 退職を受け付けました。%nl% はやく新しい仕事に就いてくださいね。")
+		scLog({_player}, "s", "退職成功: %{_beforeJobJp}% -> %{_afterJobJp}%")
+		scLog({_player}, "w", "無職であることのメリットは全くないことに注意してください")
+		exit
+	# 退職処理 ほかの転職時にある転職日更新処理は行わない。
+	else if {_bookmark} = "cancel":
+		scMessage({_player}, {_disp}, "%nl% わかりました。%nl% 転職などのご用命があれば，またお声がけください。")
+		exit
+	# エラー処理
+	else:
+		scLog({_player}, "e", "有効なブックマークIDが設定されていません")
+
+
+
+#-------------------------------------------------------------------------------
+# 職業説明
+#-------------------------------------------------------------------------------
+function scHelloWorkDescWork(player: player, bookmark: string):
+	set {_pid} to {_player}'s uuid
+	set {_disp} to "&9HelloWork"
+	# メッセージ
+	scMessage({_player}, {_disp}, "%nl% ようこそ，職業安定所へ。%nl% ここでは，各職業の説明をさせていただいております。")
+	set {_jobJp} to jobToJp({guild::job::%{_pid}%})
+	scLog({_player}, "i", "現在のあなたの職業は %{_jobJp}% です")
+	message " &7> &b&n<url:https://nicotetsu.notion.site/99a5ad13e5fc400fab7ac6372389fad3#0ff8ce79412f4797901cd1d28e224361>詳しくはこちらから（ブラウザが開きます）" to {_player}
+
+
+
+#-------------------------------------------------------------------------------
+# エンチャント本配布（樵夫）
+#-------------------------------------------------------------------------------
+function scHelloWorkLumberjackBook(player: player, bookmark: string):
+	set {_pid} to {_player}'s uuid
+	set {_disp} to "%{jobs::lumberjack::color}%Lumb.MSTR"
+	# 最初のメッセージ
+	if {_bookmark} isn't set:
+		if {guild::job::%{_pid}%} != "lumberjack":
+			scMessage({_player}, {_disp}, "%nl% あなたは樵夫さんではありません。%nl% 私があなたにしてあげられることは何もないですよ。")
+			scLog({_player}, "w", "エンチャント本は，自身のギルドマスターから配布を受けてください")
+			exit
+		scMessage({_player}, {_disp}, "%nl% 私は，樵夫ギルドのマスターです。%nl% ここでは，樵夫専用エンチャント本の配布を行っております。")
+		set {_c1} to "カットオール||cutAll||カットオールのエンチャント本を得ます"
+		scChoices({_player}, {_c1})
+	else if {_bookmark} = "cutAll":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:cut_all"":1}}}", "カットオールのエンチャント本")
+		exit
+
+
+
+#-------------------------------------------------------------------------------
+# エンチャント本配布（坑夫）
+#-------------------------------------------------------------------------------
+function scHelloWorkMinerBook(player: player, bookmark: string):
+	set {_pid} to {_player}'s uuid
+	set {_disp} to "%{jobs::miner::color}%Miner.MSTR"
+	# 最初のメッセージ
+	if {_bookmark} isn't set:
+		if {guild::job::%{_pid}%} != "miner":
+			scMessage({_player}, {_disp}, "%nl% あなたは坑夫さんではありません。%nl% 私があなたにしてあげられることは何もないですよ。")
+			scLog({_player}, "w", "エンチャント本は，自身のギルドマスターから配布を受けてください")
+			exit
+		scMessage({_player}, {_disp}, "%nl% 私は，坑夫ギルドのマスターです。%nl% ここでは，坑夫専用エンチャント本の配布を行っております。")
+		set {_c1} to "倍数ドロップ||specialDrop||倍数ドロップのエンチャント本を得ます"
+		scChoices({_player}, {_c1})
+	else if {_bookmark} = "specialDrop":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:special_drop"":1}}}", "倍数ドロップのエンチャント本")
+		exit
+
+
+
+#-------------------------------------------------------------------------------
+# エンチャント本配布（坑夫）
+#-------------------------------------------------------------------------------
+function scHelloWorkPlasterworkBook(player: player, bookmark: string):
+	set {_pid} to {_player}'s uuid
+	set {_disp} to "%{jobs::plasterwork::color}%Plast.MSTR"
+	# 最初のメッセージ
+	if {_bookmark} isn't set:
+		if {guild::job::%{_pid}%} != "plasterwork":
+			scMessage({_player}, {_disp}, "%nl% あなたは左官さんではありません。%nl% 私があなたにしてあげられることは何もないですよ。")
+			scLog({_player}, "w", "エンチャント本は，自身のギルドマスターから配布を受けてください")
+			exit
+		scMessage({_player}, {_disp}, "%nl% 私は，左官ギルドのマスターです。%nl% ここでは，左官専用エンチャント本の配布を行っております。")
+		set {_c1} to "倍数ドロップ||specialDrop||倍数ドロップのエンチャント本を得ます"
+		scChoices({_player}, {_c1})
+	else if {_bookmark} = "specialDrop":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:special_drop"":1}}}", "倍数ドロップのエンチャント本")
+		exit
+
+
+
+#-------------------------------------------------------------------------------
+# エンチャント本配布（広域耕作・広域収獲）
+#-------------------------------------------------------------------------------
+function scHelloWorkAgriBook(player: player, bookmark: string):
+	set {_pid} to {_player}'s uuid
+	set {_disp} to "&9Nokarin"
+	# 最初のメッセージ
+	if {_bookmark} isn't set:
+		scMessage({_player}, {_disp}, "%nl% のうかりんだよ。%nl% ここでは，農業関連のエンチャント本の配布を行ってるよ。")
+		set {_c1} to "広域耕作I||wideMiningLv1||広域耕作Iのエンチャント本を得ます"
+		set {_c2} to "II||wideMiningLv2||広域耕作IIのエンチャント本を得ます"
+		set {_c3} to "III||wideMiningLv3||広域耕作IIIのエンチャント本を得ます"
+		set {_c4} to "IV||wideMiningLv4||広域耕作IVのエンチャント本を得ます"
+		set {_c5} to "広域収穫I||wideHarvestLv1||広域収穫Iのエンチャント本を得ます"
+		set {_c6} to "II||wideHarvestLv2||広域収穫IIのエンチャント本を得ます"
+		set {_c7} to "III||wideHarvestLv3||広域収穫IIIのエンチャント本を得ます"
+		set {_c8} to "IV||wideHarvestLv4||広域収穫IVのエンチャント本を得ます"
+		scChoices({_player}, {_c1}, {_c2}, {_c3}, {_c4}, {_c5}, {_c6}, {_c7}, {_c8})
+	else if {_bookmark} = "wideMiningLv1":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_cultivate"":1}}}", "広域耕作Iのエンチャント本")
+		exit
+	else if {_bookmark} = "wideMiningLv2":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_cultivate"":2}}}", "広域耕作IIのエンチャント本")
+		exit
+	else if {_bookmark} = "wideMiningLv3":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_cultivate"":3}}}", "広域耕作IIIのエンチャント本")
+		exit
+	else if {_bookmark} = "wideMiningLv4":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_cultivate"":4}}}", "広域耕作IVのエンチャント本")
+		exit
+	else if {_bookmark} = "wideHarvestLv1":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_harvest"":1}}}", "広域収穫Iのエンチャント本")
+		exit
+	else if {_bookmark} = "wideHarvestLv2":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_harvest"":2}}}", "広域収穫IIのエンチャント本")
+		exit
+	else if {_bookmark} = "wideHarvestLv3":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_harvest"":3}}}", "広域収穫IIIのエンチャント本")
+		exit
+	else if {_bookmark} = "wideHarvestLv4":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_harvest"":4}}}", "広域収穫IVのエンチャント本")
+		exit
+
+
+command /bababa:
+	trigger:
+		set {_n} to nbt of player's tool
+		broadcast {_n}
+
+
+
+
+#-------------------------------------------------------------------------------
+# エンチャント本配布（広域採掘）
+#-------------------------------------------------------------------------------
+function scHelloWorkCivEngBook(player: player, bookmark: string):
+	set {_pid} to {_player}'s uuid
+	set {_disp} to "&9Tsuranuki"
+	# 最初のメッセージ
+	if {_bookmark} isn't set:
+		scMessage({_player}, {_disp}, "%nl% オレは金沢の土木王・大門山ツラヌキだ！%nl% ここでは，土木関連のエンチャント本の配布をしているぞ。")
+		set {_c1} to "広域採掘I||wideMiningLv1||広域採掘Iのエンチャント本を得ます"
+		set {_c2} to "II||wideMiningLv2||広域採掘IIのエンチャント本を得ます"
+		set {_c3} to "III||wideMiningLv3||広域採掘IIIのエンチャント本を得ます"
+		set {_c4} to "IV||wideMiningLv4||広域採掘IVのエンチャント本を得ます"
+		scChoices({_player}, {_c1}, {_c2}, {_c3}, {_c4})
+	else if {_bookmark} = "wideMiningLv1":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_mining"":1}}}", "広域採掘Iのエンチャント本")
+		exit
+	else if {_bookmark} = "wideMiningLv2":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_mining"":2}}}", "広域採掘IIのエンチャント本")
+		exit
+	else if {_bookmark} = "wideMiningLv3":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_mining"":3}}}", "広域採掘IIIのエンチャント本")
+		exit
+	else if {_bookmark} = "wideMiningLv4":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:wide_mining"":4}}}", "広域採掘IVのエンチャント本")
+		exit
+
+
+
+#-------------------------------------------------------------------------------
+# エンチャント本配布（戦闘）
+#-------------------------------------------------------------------------------
+function scHelloWorkBattleBook(player: player, bookmark: string):
+	set {_pid} to {_player}'s uuid
+	set {_disp} to "&9Bukichi"
+	# 最初のメッセージ
+	if {_bookmark} isn't set:
+		scMessage({_player}, {_disp}, "%nl% いらっしゃいやし～。%nl% ここでは，武器関連エンチャント本を配布してるでし。")
+		set {_c1} to "ガンスラッシュ||gunslash||ガンスラッシュのエンチャント本を得ます"
+		scChoices({_player}, {_c1})
+	else if {_bookmark} = "gunslash":
+		scTransfer({_player}, an enchanted_book with nbt from "{""minecraft:stored_enchantments"":{levels:{""guild_enchants:gunslash"":1}}}", "ガンスラッシュのエンチャント本")
+		exit
+
+
+
+
+
+
+
+################################################################################
+# 関数群
+################################################################################
+
+# 【関数】メッセージを生成して返す
+# （引数）メッセージを受信するプレイヤー，[xxx]の中身，メッセージ
+# （関数実行時テンプレ）scMessage({_player}, "l", "%nl% ")
+function scMessage(player: player, disp: text, message: text):
+	message "[%{_disp}%&r] %{_message}%" to {_player}
+
+
+
+# 【関数】ログを生成して返す
+# （引数）ログを受信するプレイヤー，ログの需要度（log, information, success, warning, error, critical），ログの内容
+# （関数実行時テンプレ）scLog({_player}, {_lvl}, "")
+function scLog(player: player, lvl: text, log: text):
+	if {_lvl} = "l" or "log":
+		message " &8★ &7&o%{_log}%" to {_player}
+	else if {_lvl} = "i" or "info" or "information":
+		message " §bℹ &3&o%{_log}%" to {_player}
+	else if {_lvl} = "s" or "success":
+		message " §a☑ &2&o%{_log}%" to {_player}
+	else if {_lvl} = "w" or "warning":
+		message " §e⚠ &6&o%{_log}%" to {_player}
+	else if {_lvl} = "e" or "error":
+		message " §c☒ &4&o%{_log}%" to {_player}
+	else if {_lvl} = "c" or "critical":
+		message " §d☠ &5&o%{_log}%" to {_player}
+
+
+
+# 【関数】選択肢のついたメッセージを生成して返す
+# （引数）
+# （関数実行時テンプレ）scChoices({_player}, {_c1}, {_c2}, {_c3}, {_c4}, {_c5}, {_c6}, {_c7}, {_c8})
+function scChoices(player: player, c1: string, c2: string = "", c3: string = "", c4: string = "", c5: string = "", c6: string = "", c7: string = "", c8: string = ""):
+	# シナリオIDを取得
+	set {_scenarioId} to getDialogueCache({_player}, "scenarioId")
+	# テキストコンポーネントを生成
+	add a new text component from " &7>" to {_m::*}
+	if {_c1} isn't set:
+		message "%{@dialog display name}% &4エラー！ &r選択肢引数が1つも与えられていません。&7(scSelect)" to {_player}
+		stop
+	# 選択肢1
+	if {_c1} != "":
+		add a new text component from " " to {_m::*}									# ただの空白
+		add scGenerateOneChoice({_scenarioId}, {_c1}) to {_m::*}
+	# 選択肢2
+	if {_c2} != "":
+		add a new text component from " " to {_m::*}									# ただの空白
+		add scGenerateOneChoice({_scenarioId}, {_c2}) to {_m::*}
+	# 選択肢3
+	if {_c3} != "":
+		add a new text component from " " to {_m::*}									# ただの空白
+		add scGenerateOneChoice({_scenarioId}, {_c3}) to {_m::*}
+	# 選択肢4
+	if {_c4} != "":
+		add a new text component from " " to {_m::*}									# ただの空白
+		add scGenerateOneChoice({_scenarioId}, {_c4}) to {_m::*}
+	# 選択肢5
+	if {_c5} != "":
+		add a new text component from " " to {_m::*}									# ただの空白
+		add scGenerateOneChoice({_scenarioId}, {_c5}) to {_m::*}
+	# 選択肢6
+	if {_c6} != "":
+		add a new text component from " " to {_m::*}									# ただの空白
+		add scGenerateOneChoice({_scenarioId}, {_c6}) to {_m::*}
+	# 選択肢7
+	if {_c7} != "":
+		add a new text component from " " to {_m::*}									# ただの空白
+		add scGenerateOneChoice({_scenarioId}, {_c7}) to {_m::*}
+	# 選択肢8
+	if {_c8} != "":
+		add a new text component from " " to {_m::*}									# ただの空白
+		add scGenerateOneChoice({_scenarioId}, {_c8}) to {_m::*}
+	set {_l} to merge components {_m::*}
+	send component {_l} to {_player}
+	delete {_m::*}
+
+
+function scGenerateOneChoice(scenarioId: string, choice: string):: text component:
+	set {_split::*} to {_choice} split at "||"
+	set {_c} to a new text component from "&b&n%{_split::1}%"
+	set click event of {_c} to a new click event to run command "/dialogue %{_scenarioId}% %{_split::2}%"
+	set hover event of {_c} to a new hover event showing "%{_split::3}%" if {_split::3} is set
+	return {_c}
+
+
+
+# 【関数】アイテム譲渡
+# （引数）譲渡されるプレイヤー，アイテム（実体），アイテム名
+# （関数実行時テンプレ）scTransfer({_player}, (item object), "")
+function scTransfer(player: player, stock: item, itemName: text):
+	# キャッシュから，関数呼び出し元のシナリオIDとブックマークIDを取得
+	set {_scenarioId} to getDialogueCache({_player}, "scenarioId")
+	set {_bookmark} to getDialogueCache({_player}, "bookmark")
+	if {_player} can't hold {_stock}:
+		scLog({_player}, "e", "これ以上アイテムを持てません！")
+		exit
+	give {_stock} to {_player}
+	scLog({_player}, "s", "%{_itemName}% を得ました")
+	set {_c1} to "さらに貰う||%{_bookmark}%||ふたたび同一アイテムの譲渡を受ける"
+	scChoices({_player}, {_c1})
+
+
+
+# 【関数】プレイヤーのUUID 及び 所在地（ワールドとチャンク座標）をもとに，短いハッシュ値を返す
+# （引数）プレイヤーオブジェクト
+# （返値）ランダムな16文字。同じプレイヤーが同じ場所でハッシュを発行する限り，必ず同じ文字列が返される。
+function getShortHash(player: player):: string:
+	set {_pid} to {_player}'s uuid
+	set {_chunk} to {_player}'s chunk
+	set {_rawText} to "%{_pid}% %{_chunk}%"
+	set {_hashed} to {_rawtext} hashed with SHA-256
+	return the first 16 characters of {_hashed}
+
+
+
+# 【関数】シナリオ再生に必要なデータをグローバル関数に保持
+# （引数）プレイヤーオブジェクト，キー，データ
+function setDialogueCache(player: player, key:text, data: text):
+	set {_pid} to {_player}'s uuid
+	set {dialogue::cache::%{_pid}%::%{_key}%} to {_data}
+
+
+
+# 【関数】グローバル関数に保持している，プレイヤーのキャッシュを取得
+# （引数）プレイヤーオブジェクト，キー
+# （返値）保持していたデータ
+function getDialogueCache(player: player, key:text):: string:
+	set {_pid} to {_player}'s uuid
+	return {dialogue::cache::%{_pid}%::%{_key}%}
+
+

@@ -60,39 +60,15 @@ on load:
 	# (無職の定義)
 	set {jobs::unemployed::name} to "無職"
 	set {jobs::unemployed::color} to "&7"
-	set {jobs::unemployed::changeDescription} to "失職します。何もメリットはありません。"
-	add " &7●&r 職のない状態です。何のメリットもありません。" to {jobs::unemployed::descriptions::*}
 	# (樵夫の定義)
 	set {jobs::lumberjack::name} to "樵夫"
 	set {jobs::lumberjack::color} to "&a"
-	set {jobs::lumberjack::changeDescription} to "木材生産に有利な樵夫（木こり）に転職できます。"
-	add " &7●&r 当職に就くと，いわゆる「CutAll」を使用できます。" to {jobs::lumberjack::descriptions::*}
-	add "  斧で原木を破壊することで，1本の木をまるごと伐採できます。" to {jobs::lumberjack::descriptions::*}
-	add "  （斧には専用エンチャントが必要です）" to {jobs::lumberjack::descriptions::*}
-	set {_pjrl} to {@per job rights lumberjack cutall}
-	add "  CutAll利権を利用するごとに，利権値が &c%{_pjrl}%&r 消費されます。" to {jobs::lumberjack::descriptions::*}
 	# (坑夫の定義)
 	set {jobs::miner::name} to "坑夫"
 	set {jobs::miner::color} to "&e"
-	set {jobs::miner::changeDescription} to "土砂や石材の生産に有利な坑夫に転職できます。"
-	add " &7●&r 当職に就くと，ツルハシで採集できる石材採集量がx4になります。" to {jobs::miner::descriptions::*}
-	add "  （ツルハシには専用エンチャントが必要です）" to {jobs::miner::descriptions::*}
-	set {_pjrm} to {@per job rights miner mining}
-	add "  倍数ドロップ利権を利用するごとに，利権値が &c%{_pjrm}%&r 消費されます。" to {jobs::miner::descriptions::*}
-	add " &7●&r 広域掘削利権を，利権値の消費なしでご利用いただけます。" to {jobs::miner::descriptions::*}
 	# (左官の定義)
 	set {jobs::plasterwork::name} to "左官"
 	set {jobs::plasterwork::color} to "&b"
-	set {jobs::plasterwork::changeDescription} to "高級建材の生産に有利な左官に転職できます。"
-	set {jobs::plasterwork::description} to "左官"
-	add " &7●&r 当職に就くと，ツルハシで採集できるテラコッタと" to {jobs::plasterwork::descriptions::*}
-	add "  コンクリートがx3になります。" to {jobs::plasterwork::descriptions::*}
-	add "  （ツルハシには専用エンチャントが必要です）" to {jobs::plasterwork::descriptions::*}
-	set {_pjrp} to {@per job rights plasterwork mining}
-	add "  倍数ドロップ利権を利用するごとに，利権値が &c%{_pjrp}%&r 消費されます。" to {jobs::plasterwork::descriptions::*}
-	add " &7●&r 環境なしにどこでもコンクリートが生産可能な「簡易生成」が可能です。" to {jobs::plasterwork::descriptions::*}
-	set {_rights} to {@per rights on marchant powder to concrete}
-	add "  簡易生成利権を利用するごとに，利権値が &c%{_rights}%&r 消費されます。" to {jobs::plasterwork::descriptions::*}
 	# -------------------------------------------------------------------------------
 	# ◇■◇エンチャント 及び エンチャントの対象となる武器道具の定義◇■◇
 	# ・ゲーム中のエンチャント実体は，データパック内で設定すること
@@ -168,18 +144,6 @@ command /guild <string=wizard> [<string=null> [<string=null> <string=null>]]:
 			if {_action} is "null":
 				# 1行目
 				message "%{@guild display name}% こちら職業安定所です。ご用件をお選びください。" to the player
-				# 2行目				
-				add a new text component from " &7> " to {_m::*}
-				set {_c} to a new text component from "&b&n転職したい&r"
-				set click event of {_c} to a new click event to run command "/guild wizard change"
-				add {_c} to {_m::*}
-				add a new text component from " " to {_m::*}	# ただの空白
-				set {_c} to a new text component from "&b&n説明を聞きたい&r"
-				set click event of {_c} to a new click event to run command "/guild wizard help"
-				add {_c} to {_m::*}
-				set {_l} to merge components {_m::*}
-				send component {_l} to the player
-				delete {_m::*}
 				# 3行目
 				add a new text component from " &7> &r簡易クラフト・交易（ " to {_m::*}
 				set {_c} to a new text component from "&b&nコンクリート&r"
@@ -244,58 +208,6 @@ command /guild <string=wizard> [<string=null> [<string=null> <string=null>]]:
 					delete {_m::*}
 				# コマンド入力者の現在の利権値を表示してあげる
 				addRights(player, 0)
-				stop
-			# 第2引数"null"→転職ウィザードの表示
-			else if {_action} is "change":
-				# 1～2行目
-				message "%{@guild display name}% 転職をご希望ですね。新しい職種を選んで下さい。" to the player
-				set {_jobNow} to {guild::job::%player's uuid%}
-				message " &7現在のあなたの職業は%{jobs::%{_jobNow}%::color}% %jobToJp({_jobNow})% &7です。" to the player # 2025/3/16 ぎまっち追加 転職前に現在の職業を表示
-				# 3行目：職業リストを読み出して，各職業へ転職できるリンクを生成して返す
-				add a new text component from " &7> " to {_m::*}
-				set {_j::*} to the indexes of {jobs::*}
-				loop {_j::*}:
-					set {_color} to {jobs::%loop-value%::color}							# 職業リストから，テキスト装飾用カラーコードを取得。
-					set {_name} to {jobs::%loop-value%::name}								# 職業リストから，職業の日本語名を取得。
-					set {_desc} to {jobs::%loop-value%::changeDescription}	# 職業リストから，転職時の説明文を取得。
-					set {_c} to a new text component from "%{_color}%&n%{_name}%&r"
-					set click event of {_c} to a new click event to run command "/guild change %loop-value%"
-					set hover event of {_c} to a new hover event showing "%{_desc}%"
-					add {_c} to {_m::*}
-					add a new text component from " " to {_m::*}	# ただの空白
-				# (最後にテキストコンポーネントを統合して表示)
-				set {_l} to merge components {_m::*}
-				send component {_l} to the player
-				delete {_m::*}
-				stop
-			# 第2引数"help"→ヘルプウィザードの表示
-			else if {_action} is "help":
-				# 1～2行目
-				message "%{@guild display name}% 職業や利権について，知りたい内容をクリックしてください。" to the player
-				set {_jobNow} to {guild::job::%player's uuid%}
-				message " &7現在のあなたの職業は%{jobs::%{_jobNow}%::color}% %jobToJp({_jobNow})% &7です。" to the player # 2025/3/16 ぎまっち追加 転職前に現在の職業を表示
-				# 3行目：職業リストを読み出して，概要説明 及び 各職業の説明を表示するリンクを生成して返す
-				add a new text component from " &7> " to {_m::*}
-				# (概要説明)
-				set {_c} to a new text component from "&f&n概要説明&r"
-				set click event of {_c} to a new click event to run command "/guild help"
-				set hover event of {_c} to a new hover event showing "職業・利権システムについての概要を知りたい"
-				add {_c} to {_m::*}
-				add a new text component from " " to {_m::*}	# ただの空白
-				# (各職業の説明：ループで生成)
-				set {_j::*} to the indexes of {jobs::*}
-				loop {_j::*}:
-					set {_color} to {jobs::%loop-value%::color}							# 職業リストから，テキスト装飾用カラーコードを取得。
-					set {_name} to {jobs::%loop-value%::name}								# 職業リストから，職業の日本語名を取得。
-					set {_c} to a new text component from "%{_color}%&n%{_name}%&r"
-					set click event of {_c} to a new click event to run command "/guild help %loop-value%"
-					set hover event of {_c} to a new hover event showing "%{_name}%という職業について詳しく知りたい"
-					add {_c} to {_m::*}
-					add a new text component from " " to {_m::*}	# ただの空白
-				# (最後にテキストコンポーネントを統合して表示)
-				set {_l} to merge components {_m::*}
-				send component {_l} to the player
-				delete {_m::*}
 				stop
 		# 第1引数"change"→職を変更◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇
 		else if {_order} is "change":
@@ -517,28 +429,6 @@ on tab complete of "/autobrand":
 # 就職・転職の処理
 ################################################################################
 
-# 【関数】プレイヤー自身での職を変更する
-# （引数）プレイヤー（オフラインでも可），変更したい仕事
-function setJobMyself(p: offlineplayer, job: text):
-	set {_pid} to {_p}'s uuid
-	set {_isChange} to false			# ▼前回の転職から30日経っていない場合は，キャンセル
-	set {_today} to floor(unix timestamp of now / 86400)	# 本日を求める
-	# もし，ジョブチェンジ日の記録がなかった場合は，本日の日付を記録する。
-	if {guild::lastJobChangeDay::%{_pid}%} is not set:
-		set {guild::lastJobChangeDay::%{_pid}%} to 0
-	# 最終ジョブチェンジ日と本日との日数差を求め，最終ジョブチェンジ日から30日経っていない場合，警告を出して終了
-	set {_diff} to {_today} - {guild::lastJobChangeDay::%{_pid}%}
-	if {_diff} < 30:
-		message "%{@guild display name}% &4転職は，前回の転職から30日以上が経過する必要があります&r。" to {_p}
-		exit
-	# 即時に仕事を変更して，ログを表示
-	set {_r} to setJob({_p}, {_job})
-	message "%{@guild display name}% あなたの職業を %jobToJp({_r})% に設定しました。" to {_p}
-	# 本日の日付を記録する。
-	set {guild::lastJobChangeDay::%{_pid}%} to {_today}
-
-
-
 # 【関数】職業を即時に変更する
 # （詳細）職業が変更されると，自動的にパーミッション周りも変更される
 # （引数）職業を変更するプレイヤー，変更したい職業をIDで指定
@@ -550,10 +440,6 @@ function setJob(p: offlineplayer, job: text):: text:
 	if {_job} is "lumberjack":
 		set {guild::job::%{_pid}%} to "lumberjack"
 		set {_r} to "lumberjack"
-	# 工匠への転職処理
-	else if {_job} is "craftsman":
-		set {guild::job::%{_pid}%} to "craftsman"
-		set {_r} to "craftsman"
 	# 坑夫への転職処理
 	else if {_job} is "miner":
 		set {guild::job::%{_pid}%} to "miner"
@@ -1050,7 +936,7 @@ on break:
 	set {_pid} to {_player}'s uuid
 	# 条件チェック
 	the past event-block is wheat or carrots or potatoes or beetroots			# 破壊したものが，小麦，ビートルート，ニンジン，ジャガイモである
-	{_player}'s tool is enchanted with guild_enchants:wide_harvest				# プレイヤーが「広域耕作」エンチャントのついた道具で採掘したこと
+	{_player}'s tool is enchanted with guild_enchants:wide_harvest				# プレイヤーが「広域収獲」エンチャントのついた道具で採掘したこと
 	{guild::jobRights::%{_pid}%} >= 1																			# 利権値が足りていること {@per job rights cultivate}
 	cancel the event
 	wait 1 tick		# 休憩を挟まないと以下のコードがうまく作動しない
