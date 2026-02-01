@@ -1,0 +1,91 @@
+# ベーシックインカム スクリプト v1.0
+# ・上限金額に達するまで，毎日１回，一定金額が給付される。
+
+
+options:
+	days max : 10				# 遡って給付が行われる最大日数
+	handout per day : 1000			# 1日あたりの最大給付額
+	money max : 50000			# 給付が行われる上限金額
+	# 党中央委員会の名称
+	cpcc display name : "§7[§l§cCPCC§7]§r"
+
+
+on join:
+	# 本日を求める
+	set {_today} to floor(unix timestamp of now / 86400)
+	# もし，ログインプレイヤーの最終ログイン日の記録がなかった場合は，本日の日付を記録する。
+	if {lastLogInDay::%player's uuid%} is not set:
+		# 互換性維持（下2行）：各入植者ごとの情報はUUIDで管理されるので，その置換を行う
+		if {lastLogInDay::%player%} is set:
+			set {lastLogInDay::%player's uuid%} to {lastLogInDay::%player%}
+		else:
+			set {lastLogInDay::%player's uuid%} to {_today}
+	# 最終ログイン日と本日との日数差を求める
+	set {_diff} to {_today} - {lastLogInDay::%player's uuid%}
+	# 本日の日付を記録する。
+	set {lastLogInDay::%player's uuid%} to {_today}
+	# 日数差が1日以上あり，かつプレイヤーが給付上限金額を持たない場合，BIを給付
+	if {_diff} >= 1:
+		# 条件チェック
+		the player's money <= {@money max}
+		the player has permission "sakuraft.basic_income.receipt"
+		# 本処理
+		set {_mm} to {@money max}
+		set {_hd} to {@handout per day}
+		set {_dm} to {@days max}
+		set {_sum days} to min({_diff}, {_dm})									# 何日分の給付を行うか，その日数を求める
+		set {_handout max} to {_mm} - the player's money							# 給付上限プレイヤーの所持金を求める
+		set {_sum handout} to min({_sum days} * {_hd}, {_handout max}) 	# 給付金の最大額を求める
+		add {_sum handout} to the player's money										# 給付実施
+		message "%{@cpcc display name}% ベーシックインカムを §a%{_sum handout}%ﾓｯｻﾘ§r 給付しました。"
+
+
+
+command /bi <text="help"> [<text>]:
+	description: ベーシックインカムに関する情報を知るためのコマンドです
+	usage: /bi helpでヘルプ
+	trigger:
+		# 第1引数help->ヘルプを表示
+		if arg-1 is "help":
+			# 条件チェック
+			if the player don't have permission "sakuraft.basic_income.receipt":
+				message "%{@cpcc display name}% &cあなたはベーシックインカムの受給資格を持ちません&r。" to player
+				exit
+			# 本処理
+			set {_mm} to {@money max}
+			set {_hd} to {@handout per day}
+			set {_dm} to {@days max}
+			message "%{@cpcc display name}% こちらは，§l§c党中央委員会§rです。" to player
+			message " ベーシックインカム制度では，実時間で１日ごとに一定金額を給付します。" to player
+			message " ただし給付には，以下の条件があります。" to player
+			message "  ● §6前回のログイン日から，1日以上が経過していること。§r" to player
+			message "  ● §6所持金が，%{_mm}%§6ﾓｯｻﾘ 未満であること。§r" to player
+			message " また，以下の制約にご注意ください。" to player
+			message "  ● §7給付金は，1日あたり %{_hd}%§7ﾓｯｻﾘ である。" to player
+			message "  ● §7給付金は，1回のログインでさかのぼって %{_dm}%§7日分 まで給付される。" to player
+			message " なお本日は，1970年1月1日から数えて %{lastLogInDay::%player's uuid%}%日目 です。" to player
+			stop
+		# 第1引数clear->特定プレイヤーの最終ログイン日をリセット
+		else if arg-1 is "clear":
+			# 条件チェック
+			if the player don't have permission "sakuraft.basic_income.reset":
+				message "%{@cpcc display name}% &cあなたはベーシックインカムのログイン日消去資格を持ちません&r。" to player
+				exit
+			# 本処理
+			set {_to} to arg-2 parsed as offlineplayer
+			set {lastLogInDay::%{_to}'s uuid%} to 0
+			message "%{@cpcc display name}% %{_to}'s display name%さんの最終ログイン日をリセットしました。"
+
+
+
+# 【コマンド】ベーシックインカム機能のコマンドサジェスト
+# （詳細）スクリプトの内容はコマンドに準じて変更すべし
+on skbee tab complete for "/bi":
+	set tab completions for position 1 to "help", and "clear"
+	if tab arg-1 = "clear":
+		set tab completions for position 2 to all offlineplayers
+
+permission myplugin.example:
+	description: Example permission
+	default: op
+
