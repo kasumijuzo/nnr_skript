@@ -5,7 +5,7 @@ on damage of wandering trader or Trader Llama:
 	# 条件チェック。「プレイヤーの攻撃であること」「Shiftキーを押していること」「権限持ち」
 	the attacker is player
 	the attacker is sneaking
-	the player don't have permission "sakuraft.smash_trader"
+	the attacker don't have permission "sakuraft.smash_trader"
 	# 条件チェック。「飼い慣らされていないこと」
 	if the tamer of the victim is a player:
 		stop
