@@ -85,7 +85,5 @@ on skbee tab complete for "/bi":
 	if tab arg-1 = "clear":
 		set tab completions for position 2 to all offlineplayers
 
-permission myplugin.example:
-	description: Example permission
-	default: op
+
 
