@@ -9,6 +9,8 @@ options:
 	allowed flight round : 100
 	# 飛行を許す最低高度
 	flying minimum altitude : 50
+	# 飛行許可を出してから，また飛行許可を出せるまでのクールタイム(秒)
+	flying cooltime : 30
 	# Ｓモードを許す最低高度
 	spectator minimum altitude : 50
 	# 飛ぶのを許可するワールド名
@@ -25,11 +27,11 @@ variables:
 
 
 # ◇■◇飛行許可コマンド◇■◇
-command /fly [<text=null>]:
+command /fly [<text=toggle>]:
 	description: 飛行の許可を得たり，許可を返納したりするコマンドです。
 	usage: /fly <true/false> trueで飛行許可申請，falseで飛行許可返納，helpでヘルプ
-	cooldown: 30 seconds
-	cooldown message: %{@aviation display name}% &c当コマンドは連続使用ができません&r。(残り待機秒数 %remaining time%)
+	permission: sakuraft.changemode.tofly
+	permission message: %{@aviation display name}% &cあなたは飛行機能を利用できる権限をもっていません&r。
 	trigger:
 		set {_player} to the player
 		set {_pid} to {_player}'s uuid
@@ -42,7 +44,7 @@ command /fly [<text=null>]:
 		if the player is within {@free location A} and {@free location B}:	# 飛行無制限範囲内？
 			set {_isInRange} to true		
 		# 飛行のトグルを実現するために，引数が空のときは飛行許可状況に応じてtrueかfalseを代入
-		if {_arg} is "null":
+		if {_arg} is "toggle":
 			if the player can fly:
 				if the player's gamemode is spectator:
 					set {_arg} to "true"
@@ -65,39 +67,48 @@ command /fly [<text=null>]:
 		else if {_arg} is "false" or "no":
 			set {recentCommand::%the player's uuid%} to "stopFly"
 			stop
-		# エラーチェック①：許可を得たいが非許可ディメンションにいるとき
+		# エラーチェック(2)：許可を得たいが非許可ディメンションにいるとき
 		#		else if the player isn't in {@allowed world}:
 		else if {_player}'s world's environment isn't the overworld:
 			message "%{@aviation display name}% &cこのディメンションでの飛行許可は得られません&r。"
 			disallow fly to the player
 			stop
-		# エラーチェック②：許可を得たいが許可できない高度や範囲にいるとき
+		# エラーチェック(3)：許可を得たいが許可できない高度や範囲にいるとき
 		else if {_isInRange} is false:
 			message "%{@aviation display name}% &cこの高度での飛行許可は得られません&r。"
 			disallow fly to the player
 			stop
-		# エラーチェック③：ゲームモードがサバイバルではなかった場合
+		# エラーチェック(4)：ゲームモードがサバイバルではなかった場合
 		else if the player's gamemode isn't survival:
 			message "%{@aviation display name}% &cこの機能はサバイバルモードの時のみご使用になれます&r。"
 			stop
-		# エラーチェック④：重複して飛行許可を得ようとしたとき
+		# エラーチェック(5)：重複して飛行許可を得ようとしたとき
 		else if the player can fly:
 			message "%{@aviation display name}% &eあなたはすでに飛行許可を得ています&r。"
 			stop
-		# エラーチェック⑤：Ｓモード使用中のとき
+		# エラーチェック(6)：Ｓモード使用中のとき
 		else if the player's gamemode is spectator:
 			message "%{@aviation display name}% &eＳモード使用中は飛行許可を出せません&r。"
 			stop
 		# 許可を得る場合
 		else:
+		# エラーチェック(7)：前回に飛行の《許可》を受けてから30秒経過していないとき
+			set {_leftTime} to {@flying cooltime} - ceil((unix timestamp of now) - {lastAllowFly::%the player's uuid%})
+			if {_leftTime} > 0:
+				message "%{@aviation display name}% &c当機能は連続で許可できません&r。(残り待機秒数 %{_leftTime}% 秒)"
+				stop
 			message "%{@aviation display name}% 飛行を許可します。"
 			allow fly to the player
-			set {flyStartPos::%the player's uuid%} to the player's location
+			set {flyStartPos::%the player's uuid%}  to the player's location		# プレイヤーに飛行許可を出した場所を保存
+			set {lastAllowFly::%the player's uuid%} to unix timestamp of now		# プレイヤーに飛行許可を出したUNIX時間を保存
 			set {_bossbar} to boss bar with id "fly_%the player's uuid%" with title "飛行許可中" with color blue with progress 0	# skBee
-			set bar style of {_bossbar} to solid bar																				# skBee
-			add the player to {_bossbar}																							# skBee
+			set bar style of {_bossbar} to solid bar		# skBee
+			add the player to {_bossbar}								# skBee
 			# 2ticksごとに各種チェックのループ処理 ▼▽▼▽▼▽▼▽▼▽▼▽▼▽
-			while the player can fly:
+			# 以前は「while the player can fly」にて，毎回プレイヤーが飛行できるかどうかをチェックしていましたが
+			# 不確実性が高いようなので，以後は{_canFly}フラグを使うことにした。
+			set {_canFly} to true
+			while {_canFly} = true:
 				# プレイヤーがフリー空間にいるかどうかを検知
 				set {_isFree} to false
 				if the player is within {@free location A} and {@free location B}:
@@ -106,37 +117,36 @@ command /fly [<text=null>]:
 				set {_horizonStartPos} to the location ({flyStartPos::%the player's uuid%}'s x-loc, the player's altitude, {flyStartPos::%the player's uuid%}'s z-loc) in {flyStartPos::%the player's uuid%}'s world
 				set {_distance} to the distance between the player and {_horizonStartPos}
 				set bar progress of {_bossbar} to round({_distance} / {@allowed flight round} * 100)
-				# エラーチェック①：飛行停止コマンドを検知したとき
+				# エラーチェック(11)：飛行停止コマンドを検知したとき
 				if {recentCommand::%the player's uuid%} is "stopFly":
 					message "%{@aviation display name}% 飛行許可の取り下げを受け付けました。"
-					disallow fly to the player
 					set {recentCommand::%the player's uuid%} to ""
-				# エラーチェック②：非許可ワールドにいってしまったとき
-				#else if the player isn't in {@allowed world}:
+					set {_canFly} to false
+				# エラーチェック(12)：非許可ワールドにいってしまったとき
 				else if {_player}'s world's environment isn't the overworld:
 					message "%{@aviation display name}% &c飛行禁止ディメンション&rを検知しました。飛行許可を取り下げます。"
-					disallow fly to the player
-				# エラーチェック③：低い高度にいってしまったとき
+					set {_canFly} to false
+				# エラーチェック(13)：低い高度にいってしまったとき
 				else if the player's altitude is less than {@flying minimum altitude}:
 					{_isFree} is false		# フリー空間内であればこのエラーは発動しない
 					message "%{@aviation display name}% &c限界最低高度(Y={@flying minimum altitude})を超えました&r。飛行許可を取り下げます。"
-					disallow fly to the player
-				# エラーチェック④：ゲームモードがサバイバルではなかった場合
+					set {_canFly} to false
+				# エラーチェック(14)：ゲームモードがサバイバルではなかった場合
 				else if the player's gamemode isn't survival:
 					message "%{@aviation display name}% &eゲームモード変更&rを検知しました。当機能はご利用になれません。"
-					disallow fly to the player
-				# エラーチェック⑤：利用者本人のオフラインを検知したとき
-				else if the player isn't online:
-					disallow fly to the player
-				# エラーチェック⑥：利用者本人の死亡を検知
+					set {_canFly} to false
+				# エラーチェック(15)：利用者本人のオフラインを検知したとき
+				else if the player is offline:
+					set {_canFly} to false
+				# エラーチェック(16)：利用者本人の死亡を検知
 				else if the player is dead:
 					message "%{@aviation display name}% &c死亡&rを検知しました。飛行許可を取り下げます。"
-					disallow fly to the player
-				# エラーチェック⑦：水平半径が許可外に出た場合
+					set {_canFly} to false
+				# エラーチェック(17)：水平半径が許可外に出た場合
 				else if {_distance} is more than {@allowed flight round}:
 					{_isFree} is false		# フリー空間内であればこのエラーは発動しない
 					message "%{@aviation display name}% &c飛行許可半径({@allowed flight round}m)の外&rに出ました。飛行許可を取り下げます。"
-					disallow fly to the player
+					set {_canFly} to false
 				# フリー空間にいるかどうかでBossbarのスタイルを変える
 				if {_isFree} is true:
 					set bar color of {_bossbar} to red
@@ -149,18 +159,17 @@ command /fly [<text=null>]:
 			# ループを抜けたら飛行を停止させてこの処理を終わらせる
 			disallow fly to the player
 			delete boss bar with id "fly_%the player's uuid%"	# skBee
-			#message "%{@aviation display name}% &cループ処理終了"
 			stop
 
 
 
 # ◇■◇スペクテイターモード許可コマンド◇■◇
-command /spectator [<text=null> [<player>]]:
+command /spectator [<text=toggle> [<player>]]:
 	aliases: /spect
 	description: スペクテイターモードの使用許可を得たり，許可を返納したりするコマンドです。
 	usage: /fly <true/false> trueで使用許可申請，falseで使用許可返納，helpでヘルプ
-	cooldown: 0 seconds
-	cooldown message: %{@aviation display name}% &c当コマンドは連続使用ができません&r。(残り待機秒数 %remaining time%)
+	permission: sakuraft.changemode.tospectate
+	permission message: %{@aviation display name}% &cあなたはＳ機能を利用できる権限をもっていません&r。
 	trigger:
 		# 引数をローカル変数に代入
 		set {_arg} to arg-1
@@ -172,7 +181,7 @@ command /spectator [<text=null> [<player>]]:
 		if the player is within {@free location A} and {@free location B}:			# Ｓモードの飛行無制限範囲内？
 			set {_isInRange} to true		
 		# Ｓモードのトグルを実現するために，引数が空のときはＳモード許可状況に応じてtrueかfalseを代入
-		if {_arg} is "null":
+		if {_arg} is "toggle":
 			if the player's gamemode is spectator:
 				set {_arg} to "false"
 			else:
@@ -193,25 +202,25 @@ command /spectator [<text=null> [<player>]]:
 		else if {_arg} is "false" or "no":
 			set {recentCommand::%the player's uuid%} to "stopSpectator"
 			stop
-		# エラーチェック①：許可を得たいが非許可ディメンションにいるとき
-		else if {_player}'s world's environment isn't the overworld:
+		# エラーチェック(1)：許可を得たいが非許可ディメンションにいるとき
+		else if the player's world's environment isn't the overworld:
 			message "%{@aviation display name}% &cこのディメンションでのＳモード許可は得られません&r。" to the player
 			set the player's gamemode to survival
 			stop
-		# エラーチェック②：許可を得たいが許可できない高度や範囲にいるとき
+		# エラーチェック(2)：許可を得たいが許可できない高度や範囲にいるとき
 		else if {_isInRange} is false:
 			message "%{@aviation display name}% &cこの高度でのＳモード許可は得られません&r。" to the player
 			set the player's gamemode to survival
 			stop
-		# エラーチェック③：ゲームモードがサバイバルではなかった場合
+		# エラーチェック(3)：ゲームモードがサバイバルではなかった場合
 		else if the player's gamemode isn't survival:
 			message "%{@aviation display name}% &cこの機能はサバイバルモードの時のみご使用になれます&r。" to the player
 			stop
-		# エラーチェック④：重複してＳモードの使用許可を得ようとしたとき
+		# エラーチェック(4)：重複してＳモードの使用許可を得ようとしたとき
 		else if the player's gamemode is spectator:
 			message "%{@aviation display name}% &eあなたはすでにＳモードの使用許可を得ています&r。" to the player
 			stop
-		# エラーチェック⑤：飛行許可を得ているとき
+		# エラーチェック(5)：飛行許可を得ているとき
 		else if the player can fly:
 			message "%{@aviation display name}% &e飛行許可を得ているとき，Ｓモードはご使用になれません&r。" to the player
 			stop
@@ -228,42 +237,49 @@ command /spectator [<text=null> [<player>]]:
 				teleport the player to {_to}
 				message "%{@aviation display name}% %{_to}'s display name%さんのいる場所へワープします。"
 			# 2ticksごとに各種チェックのループ処理が走る ▼▽▼▽▼▽▼▽▼▽
-			while the player's gamemode is spectator:
-				# エラーチェック①：飛行停止コマンドを検知したとき
+			# 以前は「while the player can fly」にて，毎回プレイヤーが飛行できるかどうかをチェックしていましたが
+			# 不確実性が高いようなので，以後は{_canSpect}フラグを使うことにした。
+			set {_canSpect} to true
+			while {_canSpect} = true:
+				# エラーチェック(11)：飛行停止コマンドを検知したとき
 				if {recentCommand::%the player's uuid%} is "stopSpectator":
 					message "%{@aviation display name}% Ｓモードの取り下げを受け付けました。"
-					set the player's gamemode to survival
+					set {_canSpect} to false
 					set {recentCommand::%the player's uuid%} to ""
-				# エラーチェック②：ゲームモードがスペクテイターではなかった（なくなった）場合
+				# エラーチェック(12)：ゲームモードがスペクテイターではなかった（なくなった）場合
 				else if the player's gamemode isn't spectator:
 					message "%{@aviation display name}% &eゲームモード変更&rを検知しました。Ｓモードはご利用になれません。" to the player
-					set the player's gamemode to survival
-				# エラーチェック③：非許可ワールドにいってしまったとき
-				else if {_player}'s world's environment isn't the overworld:
+					set {_canSpect} to false
+				# エラーチェック(13)：非許可ワールドにいってしまったとき
+				else if the player's world's environment isn't the overworld:
 					message "%{@aviation display name}% &cＳモード禁止ディメンション&rを検知しました。Ｓモード許可を取り下げます。" to the player
-					set the player's gamemode to survival
-				# エラーチェック④：低い高度にいってしまったとき
+					set {_canSpect} to false
+				# エラーチェック(14)：低い高度にいってしまったとき
 				else if the player's altitude is less than {@spectator minimum altitude}:
 					message "%{@aviation display name}% &c限界最低高度(Y={@spectator minimum altitude})を超えました&r。Ｓモード許可を取り下げます。" to the player
-					set the player's gamemode to survival
-				# エラーチェック⑤：利用者本人のオフラインを検知したとき
-				else if the player isn't online:
+					set {_canSpect} to false
+				# エラーチェック(15)：利用者本人のオフラインを検知したとき
+				else if the player is offline:
 					# set the player's gamemode to survival	# これは働かないので，座標等をグローバルに記録して，次回ログイン時に処理
 					set {recentCommand::%the player's uuid%} to "logOutOnSpectator"
 					set {recentPos::%the player's uuid%} to {_flyStartPos}
-				# エラーチェック⑥：利用者本人の死亡を検知
+					set {_canSpect} to false
+				# エラーチェック(16)：利用者本人の死亡を検知
 				else if the player is dead:
 					message "%{@aviation display name}% &c死亡&rを検知しました。Ｓモード許可を取り下げます。"
-					set the player's gamemode to survival
+					set {_canSpect} to false
 				wait 2 ticks
 			# while おわり ▲△▲△▲△▲△▲△▲△▲△▲△▲△▲△▲△▲△
 			# ループを抜けたらＳモードを停止させてこの処理を終わらせる
 			teleport the player to {_flyStartPos}
+			set the player's gamemode to survival
 			delete boss bar with id "spect_%the player's uuid%"	# skBee
 			#message "%{@aviation display name}% &cループ処理終了"
 			stop
 
 
+
+# 【イベント】スペクテイターモードのままログアウトしてしまった場合の，次回ログイン時の処理
 on join:
 	if {recentCommand::%the player's uuid%} is "logOutOnSpectator":
 		set {recentCommand::%the player's uuid%} to ""
@@ -272,3 +288,19 @@ on join:
 		teleport the player to {recentPos::%the player's uuid%}
 		delete {recentPos::%the player's uuid%}
 	
+
+# 【コマンド】飛行モードのコマンドサジェスト
+# （詳細）スクリプトの内容はコマンドに準じて変更すべし
+on skbee tab complete for "/fly":
+	set tab completions for position 1 to "true", "false", "toggle", and "help"
+
+
+
+# 【コマンド】Ｓモードのコマンドサジェスト
+# （詳細）スクリプトの内容はコマンドに準じて変更すべし
+on skbee tab complete for "/spectator" or "/spect":
+	set tab completions for position 1 to "true", "false", "toggle", and "help"
+	if tab arg-1 = "true":
+		set tab completions for position 2 to all players
+
+
