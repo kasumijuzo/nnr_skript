@@ -382,6 +382,46 @@ function scHelloWorkBattleBook(player: player, bookmark: string):
 
 
 ################################################################################
+# コマンド
+################################################################################
+
+# 【コマンド】スクリプト関連の命令を呼び出す
+# （引数）
+command /log <text=""> [<text=""> [<text="null"> [<text="null"> [<text="null">]]]]:
+	description: 建築支援機能についてのコマンド
+	usage: 詳しい使用方法は，Notionからご確認いただけます。
+	executable by: players
+	aliases: /script
+	trigger:
+		set {_p} to the player
+		set {_pid} to {_p}'s uuid
+		# 第1引数がshow 若しくは 空 -> チャット欄にCUIを表示
+		#if arg-1 = "show" or "":
+		#	showDevCUI({_p}, arg-2)
+		#	exit
+		# 第1引数がmute -> 一定レベル以下のログを表示しないようにする
+		if arg-1 = "mute":
+			setLogMute({_p}, arg-2)
+			exit
+
+
+
+# 【コマンド】スクリプトスクリプト（誤字ではない）の各種機能を呼び出す
+# （詳細）スクリプトの内容はコマンドに準じて変更すべし
+on skbee tab complete for "/log" or "script":
+	set tab completions for position 1 to "mute" 
+	if tab arg-1 = "mute":
+		set tab completions for position 2 to "none", "log", "info", "success", "warning", "error" and "critical"
+
+
+
+
+
+
+
+
+
+################################################################################
 # 関数群
 ################################################################################
 
@@ -394,21 +434,27 @@ function scMessage(player: player, disp: text, message: text):
 
 
 # 【関数】ログを生成して返す
-# （引数）ログを受信するプレイヤー，ログの需要度（log, information, success, warning, error, critical），ログの内容
+# （引数）ログを受信するプレイヤー，ログの需要度（log, information, success, warning, error, critical），ログの内容，ログ強制表示
+# （注意）各ログは，プレイヤーが設定したログミュートレベルによっては表示されない
 # （関数実行時テンプレ）scLog({_player}, {_lvl}, "")
-function scLog(player: player, lvl: text, log: text):
+function scLog(player: player, lvl: text, log: text, force: boolean=false):
+	set {_pid} to {_player}'s uuid
+	set {_level} to getLogMute({_player})
+	# ログ強制がtrueのとき，この関数ではログ表示レベルを最も低くする
+	if {_force} = true:
+		set {_level} to -1
 	if {_lvl} = "l" or "log":
-		message " &8★ &7&o%{_log}%" to {_player}
+		message " &8★ &7&o%{_log}%" to {_player} if {_level} < 1
 	else if {_lvl} = "i" or "info" or "information":
-		message " §bℹ &3&o%{_log}%" to {_player}
+		message " §bℹ &3&o%{_log}%" to {_player} if {_level} < 2
 	else if {_lvl} = "s" or "success":
-		message " §a☑ &2&o%{_log}%" to {_player}
+		message " §a☑ &2&o%{_log}%" to {_player} if {_level} < 3
 	else if {_lvl} = "w" or "warning":
-		message " §e⚠ &6&o%{_log}%" to {_player}
+		message " §e⚠ &6&o%{_log}%" to {_player} if {_level} < 4
 	else if {_lvl} = "e" or "error":
-		message " §c☒ &4&o%{_log}%" to {_player}
+		message " §c☒ &4&o%{_log}%" to {_player} if {_level} < 5
 	else if {_lvl} = "c" or "critical":
-		message " §d☠ &5&o%{_log}%" to {_player}
+		message " §d☠ &5&o%{_log}%" to {_player} if {_level} < 6
 
 
 
@@ -512,5 +558,49 @@ function setDialogueCache(player: player, key:text, data: text):
 function getDialogueCache(player: player, key:text):: string:
 	set {_pid} to {_player}'s uuid
 	return {dialogue::cache::%{_pid}%::%{_key}%}
+
+
+
+# ------------------------------------------------------------------------------
+
+
+
+# 【関数】プレイヤーに表示するログのレベルを設定する
+# （引数）プレイヤーオブジェクト，ミュートするレベル
+#         - もしミュートするレベルに「info」がしていられていたら，「log」「info」はそのプレイヤーに表示しなくなる
+function setLogMute(p: player, level: text):
+	set {_pid} to {_p}'s uuid
+	if      {_level} = "none"     or "0":
+		set {dialogue::mute::%{_pid}%} to 0
+		scLog({_p},"s","すべてのログを表示するように設定しました。",true)
+	else if {_level} = "log"      or "1":
+		set {dialogue::mute::%{_pid}%} to 1
+		scLog({_p},"s","「log」レベルのログを表示しないように設定しました。",true)
+	else if {_level} = "info"     or "2":
+		set {dialogue::mute::%{_pid}%} to 2
+		scLog({_p},"s","「info」レベル以下のログを表示しないように設定しました。",true)
+	else if {_level} = "success"  or "3":
+		set {dialogue::mute::%{_pid}%} to 3
+		scLog({_p},"s","「success」レベル以下のログを表示しないように設定しました。",true)
+	else if {_level} = "warning"  or "4":
+		set {dialogue::mute::%{_pid}%} to 4
+		scLog({_p},"s","「warning」レベル以下のログを表示しないように設定しました。",true)
+	else if {_level} = "error"    or "5":
+		set {dialogue::mute::%{_pid}%} to 5
+		scLog({_p},"s","「error」レベル以下のログを表示しないように設定しました。",true)
+	else if {_level} = "critical" or "6":
+		set {dialogue::mute::%{_pid}%} to 6
+		scLog({_p},"s","すべてのログを表示しないように設定しました。",true)
+
+
+
+# 【関数】プレイヤーに表示するログのレベルを取得する
+# （引数）プレイヤーオブジェクト
+# （返値）ログのレベルを数値で得る
+function getLogMute(p: player):: integer:
+	set {_pid} to {_p}'s uuid
+	return {dialogue::mute::%{_pid}%}
+
+
 
 
